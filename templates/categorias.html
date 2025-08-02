@@ -212,12 +212,7 @@
             <span>Categorias a Pagar</span>
         </button>
     </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tipos-pagamento-tab" data-bs-toggle="tab" data-bs-target="#tipos-pagamento" type="button" role="tab" data-short-title="Tipos">
-            <i class="fas fa-credit-card"></i>
-            <span>Tipos de Pagamento</span>
-        </button>
-    </li>
+    <!-- Aba Tipos de Pagamento removida -->
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="receber-tab" data-bs-toggle="tab" data-bs-target="#receber" type="button" role="tab" data-short-title="Receber">
             <i class="fas fa-hand-holding-usd"></i>
@@ -260,32 +255,7 @@
         </div>
     </div>
 
-    <!-- Tab Tipos de Pagamento -->
-    <div class="tab-pane fade" id="tipos-pagamento" role="tabpanel">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Tipos de Pagamento</h5>
-                <button class="btn btn-primary btn-sm rounded-1 px-3 py-2" onclick="showAddModal('tipos-pagamento')">
-                    <i class="fas fa-plus me-1"></i>Adicionar
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover table-fixed">
-                        <thead>
-                            <tr>
-                                <th style="width: 40%; padding: 0.75rem 0.5rem;">Nome</th>
-                                <th style="width: 45%; padding: 0.75rem 0.5rem;">Descrição</th>
-                                <th style="width: 15%; padding: 0.75rem 0.5rem;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tiposPagamentoTableBody">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Tab Tipos de Pagamento removida -->
 
     <!-- Tab Categorias a Receber -->
     <div class="tab-pane fade" id="receber" role="tabpanel">
@@ -396,11 +366,7 @@
             title: 'Categoria a Pagar',
             tableBody: 'pagarTableBody'
         },
-        'tipos-pagamento': {
-            endpoint: '/api/tipos-pagamento',
-            title: 'Tipo de Pagamento',
-            tableBody: 'tiposPagamentoTableBody'
-        },
+        // 'tipos-pagamento' removido
         'receber': {
             endpoint: '/api/categorias-receber',
             title: 'Categoria a Receber',
@@ -421,7 +387,7 @@
             document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
                 tab.addEventListener('shown.bs.tab', function (e) {
                     const targetId = e.target.getAttribute('data-bs-target').substring(1);
-                    currentType = targetId === 'tipos-pagamento' ? 'tipos-pagamento' : targetId;
+                    currentType = targetId;
                 });
             });
         }
@@ -516,9 +482,11 @@
                 showSuccess(`${typeConfig[type].title} cadastrada com sucesso!`);
                 bootstrap.Modal.getInstance(document.getElementById("categoriaModal")).hide();
                 loadCategories(type);
+            } else if (response) {
+                const errorMessage = await handleApiError(response, "Erro ao salvar categoria");
+                showError(errorMessage);
             } else {
-                const errorData = await response.json();
-                showError(`Erro ao salvar: ${errorData.detail}`);
+                showError("Erro ao conectar com o servidor");
             }
         } catch (error) {
             console.error("Erro:", error);
@@ -536,8 +504,11 @@
                 if (response && response.ok) {
                     showSuccess(`${typeConfig[type].title} excluída com sucesso!`);
                     loadCategories(type);
+                } else if (response) {
+                    const errorMessage = await handleApiError(response, "Erro ao excluir categoria");
+                    showError(errorMessage);
                 } else {
-                    showError("Erro ao excluir categoria");
+                    showError("Erro ao conectar com o servidor");
                 }
             } catch (error) {
                 console.error("Erro:", error);

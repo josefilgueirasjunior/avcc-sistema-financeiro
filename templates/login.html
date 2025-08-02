@@ -71,6 +71,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
         }
 
         .login-form h2 {
@@ -85,7 +86,7 @@
         }
 
         .form-control {
-            border-radius: 15px;
+            border-radius: 8px;
             border: 2px solid #e9ecef;
             padding: 15px 20px;
             height: 60px;
@@ -105,7 +106,7 @@
         .btn-login {
             background: var(--primary-color);
             border: none;
-            border-radius: 15px;
+            border-radius: 8px;
             padding: 15px;
             font-weight: 600;
             font-size: 1.1rem;
@@ -153,19 +154,70 @@
         @media (max-width: 768px) {
             .login-container {
                 flex-direction: column;
-                margin: 20px;
+                margin: 10px;
+                min-height: auto;
             }
 
             .login-left {
-                padding: 40px 30px;
+                padding: 30px 20px;
+            }
+
+            .login-left .icon img {
+                height: 200px !important;
+            }
+
+            .login-left p {
+                font-size: 0.95rem;
+                margin-top: 15px;
             }
 
             .login-right {
-                padding: 40px 30px;
+                padding: 30px 20px;
             }
 
             .login-left h1 {
                 font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .login-container {
+                margin: 5px;
+            }
+
+            .login-left {
+                padding: 20px 15px;
+            }
+
+            .login-left .icon img {
+                height: 160px !important;
+            }
+
+            .login-left p {
+                font-size: 0.9rem;
+                margin-top: 10px;
+            }
+
+            .login-right {
+                padding: 20px 15px;
+            }
+
+            .form-control {
+                height: 50px;
+                padding: 12px 15px;
+            }
+
+            .form-floating label {
+                padding: 12px 15px;
+            }
+
+            .btn-login {
+                padding: 12px;
+                font-size: 1rem;
             }
         }
 
@@ -179,6 +231,33 @@
         .register-section h3 {
             color: var(--secondary-color);
             margin-bottom: 20px;
+        }
+
+        /* Melhorias no posicionamento do elemento de rodapé */
+        @media (max-width: 768px) {
+            div[style*="position: fixed; bottom: 10px; right: 20px"] {
+                right: 10px !important;
+                bottom: 10px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            div[style*="position: fixed; bottom: 10px; right: 20px"] {
+                right: 5px !important;
+                bottom: 5px !important;
+            }
+
+            div[style*="position: fixed"] .bg-white {
+                padding: 0.4rem 0.8rem !important;
+            }
+
+            div[style*="position: fixed"] small {
+                font-size: 0.7rem !important;
+            }
+
+            div[style*="position: fixed"] img {
+                height: 16px !important;
+            }
         }
     </style>
 </head>
@@ -225,6 +304,12 @@
             <div class="register-section" id="registerSection" style="display: none;">
                 <h3>Criar Nova Conta</h3>
                 <p>O cadastro de novos usuários é feito apenas por administradores no painel do sistema.</p>
+            </div>
+            
+            <!-- Créditos da Filtech -->
+            <div class="d-flex align-items-center justify-content-center mt-4">
+                <small class="text-muted me-2">Desenvolvido por</small>
+                <img src="/static/Filtech-Vertical.png" alt="Filtech" style="height: 20px;">
             </div>
         </div>
     </div>
@@ -313,40 +398,9 @@
         });
     </script>
     
-    <!-- Rodapé com versão e marca da Filtech -->
-    <div style="position: fixed; bottom: 10px; left: 20px; z-index: 1000;">
-        <div class="bg-white rounded-pill px-3 py-2 shadow-sm" style="opacity: 0.9;">
-            <small class="text-muted" id="versionInfo">Carregando versão...</small>
-        </div>
-    </div>
-    <div style="position: fixed; bottom: 10px; right: 20px; z-index: 1000;">
-        <div class="d-flex align-items-center bg-white rounded-pill px-3 py-2 shadow-sm" style="opacity: 0.9;">
-            <small class="text-muted me-2">Desenvolvido por</small>
-            <img src="/static/Filtech-Vertical.png" alt="Filtech" style="height: 20px;">
-        </div>
-    </div>
 
-    <script>
-        // Carregar informações de versão
-        async function loadVersionInfo() {
-            try {
-                const response = await fetch('/api/version/simple');
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('versionInfo').textContent = data.version;
-                } else {
-                    document.getElementById('versionInfo').textContent = 'Sistema AVCC';
-                }
-            } catch (error) {
-                document.getElementById('versionInfo').textContent = 'Sistema AVCC';
-            }
-        }
 
-        // Carregar versão quando a página carrega
-        document.addEventListener('DOMContentLoaded', function() {
-            loadVersionInfo();
-        });
-    </script>
+
 </body>
 </html>
 

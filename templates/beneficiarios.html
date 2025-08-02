@@ -78,8 +78,11 @@
     <div class="collapse" id="filterCollapse">
         <div class="bg-light rounded px-2 py-1">
             <div class="row g-1">
-                <div class="col-lg-12 col-md-12">
+                <div class="col-lg-6 col-md-6">
                     <input type="text" class="form-control form-control-sm" id="filterNome" placeholder="Buscar por nome..." onkeyup="applyFilters()">
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <input type="text" class="form-control form-control-sm" id="filterWhatsapp" placeholder="Buscar por WhatsApp..." onkeyup="applyFilters()">
                 </div>
             </div>
             <div class="text-center mt-1">
@@ -420,9 +423,27 @@
 
     function applyFilters() {
         const filterNome = document.getElementById('filterNome').value.toLowerCase();
+        const filterWhatsapp = document.getElementById('filterWhatsapp').value.toLowerCase();
 
         filteredData = beneficiariosData.filter(beneficiario => {
-            return (filterNome === '' || beneficiario.nome.toLowerCase().includes(filterNome));
+            const nomeMatch = filterNome === '' || beneficiario.nome.toLowerCase().includes(filterNome);
+            
+            let whatsappMatch = true;
+            if (filterWhatsapp !== '') {
+                if (beneficiario.whatsapp) {
+                    // Remove todos os caracteres não numéricos para comparação
+                    const whatsappNumeros = beneficiario.whatsapp.replace(/\D/g, '');
+                    const filterNumeros = filterWhatsapp.replace(/\D/g, '');
+                    
+                    // Busca tanto no texto original quanto nos números limpos
+                    whatsappMatch = beneficiario.whatsapp.toLowerCase().includes(filterWhatsapp) || 
+                                   whatsappNumeros.includes(filterNumeros);
+                } else {
+                    whatsappMatch = false;
+                }
+            }
+            
+            return nomeMatch && whatsappMatch;
         });
 
         currentPage = 1;
@@ -431,6 +452,7 @@
 
     function clearFilters() {
         document.getElementById('filterNome').value = '';
+        document.getElementById('filterWhatsapp').value = '';
         filteredData = [...beneficiariosData];
         currentPage = 1;
         renderTable();
@@ -604,8 +626,11 @@
                 if (response && response.ok) {
                     showSuccess('Beneficiário excluído com sucesso!');
                     loadBeneficiarios();
+                } else if (response) {
+                    const errorMessage = await handleApiError(response, 'Erro ao excluir beneficiário');
+                    showError(errorMessage);
                 } else {
-                    showError('Erro ao excluir beneficiário');
+                    showError('Erro ao conectar com o servidor');
                 }
             } catch (error) {
                 console.error('Erro:', error);

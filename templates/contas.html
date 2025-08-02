@@ -535,8 +535,11 @@
                 if (response && response.ok) {
                     showSuccess('Conta excluída com sucesso!');
                     loadContas();
+                } else if (response) {
+                    const errorMessage = await handleApiError(response, 'Erro ao excluir conta');
+                    showError(errorMessage);
                 } else {
-                    showError('Erro ao excluir conta');
+                    showError('Erro ao conectar com o servidor');
                 }
             } catch (error) {
                 console.error('Erro:', error);
@@ -676,9 +679,11 @@
                 const modal = bootstrap.Modal.getInstance(document.getElementById("gerenciarSaldoModal"));
                 modal.hide();
                 loadContas();
+            } else if (response) {
+                const errorMessage = await handleApiError(response, errorMessage);
+                showError(errorMessage);
             } else {
-                const errorData = await response.json();
-                showError(errorData.detail || errorMessage);
+                showError("Erro ao conectar com o servidor");
             }
         } catch (error) {
             console.error("Erro:", error);

@@ -93,6 +93,7 @@ def create_user(db: Session, user: schemas.UsuarioCreate):
     hashed_password = get_password_hash(user.password)
     db_user = database.Usuario(
         username=user.username,
+        nome_completo=user.nome_completo,
         hashed_password=hashed_password
     )
     db.add(db_user)

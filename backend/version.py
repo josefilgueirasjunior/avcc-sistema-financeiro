@@ -1,13 +1,31 @@
 from datetime import datetime
 
 # Informações de versão do sistema
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 RELEASE_DATE = "2025-01-28"
-BUILD_NUMBER = "20250128003"
+BUILD_NUMBER = "20250128004"
 ENVIRONMENT = "development"  # development, staging, production
 
 # Changelog das versões
 CHANGELOG = {
+    "1.5.0": {
+        "date": "2025-01-28",
+        "features": [
+            "Filtro de busca por WhatsApp implementado em beneficiários",
+            "Campo de filtro de beneficiários em contas a pagar convertido para busca por texto",
+            "Layout otimizado dos campos de filtro em contas a pagar e receber",
+            "Versão do sistema movida para sidebar (parte inferior)",
+            "Busca inteligente de WhatsApp com remoção automática de formatação",
+            "Redistribuição de espaço nos filtros para melhor usabilidade"
+        ],
+        "fixes": [
+            "Filtro de WhatsApp agora funciona com números sem formatação",
+            "Remoção do modal de seleção de beneficiários em contas a pagar",
+            "Campo de fornecedor ampliado para melhor digitação",
+            "Campos de status e período redimensionados proporcionalmente",
+            "Versão do sistema posicionada discretamente no sidebar"
+        ]
+    },
     "1.4.0": {
         "date": "2025-01-28",
         "features": [

@@ -2,52 +2,219 @@
 
 {% block title %}Contas a Pagar - Sistema Financeiro{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-label-sm {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .filter-section .bg-light {
+        background-color: #f8f9fa !important;
+        border: 1px solid #e9ecef;
+    }
+    
+    .filter-section .form-control-sm:focus,
+    .filter-section .form-select-sm:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
+    }
+    
+    .filter-section hr {
+        border-color: #dee2e6;
+        margin: 0.5rem 0;
+    }
+    
+    .filter-section .text-muted {
+        color: #6c757d !important;
+        font-size: 0.8rem;
+    }
+    
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .table-fixed th {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .table-fixed td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+    }
+    
+    .table-fixed .nome-column {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+        position: relative;
+    }
+    
+    .table-fixed .nome-column[title]:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    
+    .truncated-text {
+        border-bottom: 1px dotted #6c757d;
+        cursor: help;
+    }
+    
+    .actions-column {
+        white-space: nowrap;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 2px;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 768px) {
+        .table-fixed {
+            font-size: 0.8rem;
+        }
+        
+        .table-fixed th {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.2rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.3rem;
+        }
+        
+        /* Ocultar colunas menos importantes em mobile */
+        .table-fixed .hide-mobile {
+            display: none;
+        }
+        
+        .btn-group-actions {
+            flex-direction: column;
+            gap: 1px;
+        }
+        
+        .btn-group-actions .btn {
+            padding: 0.2rem 0.3rem;
+            font-size: 0.7rem;
+        }
+        
+        .btn-group-actions .btn i {
+            font-size: 0.8rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .table-fixed th {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.15rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
+<div class="page-header mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
         <div>
             <h1 class="page-title">Contas a Pagar</h1>
             <p class="page-subtitle">Gerencie as despesas e contas a pagar da associação</p>
         </div>
-        <button class="btn btn-primary" onclick="showAddModal()">
-            <i class="fas fa-plus me-2"></i>Adicionar Nova
+        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 flex-shrink-0" onclick="showAddModal()">
+            <i class="fas fa-plus me-1"></i>
+            <span class="d-none d-md-inline">Adicionar Nova</span>
+            <span class="d-md-none">Adicionar</span>
         </button>
     </div>
 </div>
 
-<div class="filter-section">
-    <div class="row">
-        <div class="col-md-2">
-            <select class="form-select" id="filterStatus" onchange="applyFilters()">
-                <option value="">Todos Status</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Pago">Pago</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="text" class="form-control" id="filterNomeRazao" placeholder="Nome/Razão..." onkeyup="applyFilters()">
-        </div>
-        <div class="col-md-1">
-            <input type="text" class="form-control" id="filterCategoria" placeholder="Categorias..." readonly onclick="abrirModalCategorias()">
-            <input type="hidden" id="categoriasSelecionadas">
-        </div>
-        <div class="col-md-1">
-            <input type="text" class="form-control" id="filterBeneficiario" placeholder="Beneficiários..." readonly onclick="abrirModalBeneficiarios()">
-            <input type="hidden" id="beneficiariosSelecionados">
-        </div>
-        <div class="col-md-2">
-            <input type="text" class="form-control" id="filterConta" placeholder="Contas..." readonly onclick="abrirModalContas()">
-            <input type="hidden" id="contasSelecionadas">
-        </div>
-        <div class="col-md-2">
-            <input type="text" class="form-control" id="filterPeriodoVencimento" placeholder="Período Vencimento..." readonly onclick="abrirCalendarioPeriodo()">
-            <input type="hidden" id="dataVencimentoInicio">
-            <input type="hidden" id="dataVencimentoFim">
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-secondary w-100" onclick="clearFilters()">
-                <i class="fas fa-times me-2"></i>Limpar
-            </button>
+<div class="filter-section mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="fw-semibold" style="color: var(--primary-color);">
+            <i class="fas fa-filter me-1"></i>Filtros
+        </small>
+        <button class="btn btn-outline-primary btn-sm rounded-1 py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-chevron-down" id="filterToggleIcon" style="font-size: 0.7rem;"></i>
+        </button>
+    </div>
+    
+    <div class="collapse" id="filterCollapse">
+        <div class="bg-light rounded px-3 py-2">
+            <!-- Filtros Básicos -->
+            <div class="mb-2">
+                <small class="text-muted fw-semibold d-block mb-1">
+                    <i class="fas fa-search me-1"></i>Filtros Básicos
+                </small>
+                <div class="row g-2">
+                    <div class="col-lg-2 col-md-3">
+                        <label class="form-label form-label-sm mb-1">Status</label>
+                        <select class="form-select form-select-sm" id="filterStatus" onchange="applyFilters()">
+                            <option value="">Todos Status</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Pago">Pago</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-6 col-md-5">
+                        <label class="form-label form-label-sm mb-1">Fornecedor</label>
+                        <input type="text" class="form-control form-control-sm" id="filterNomeRazao" placeholder="Nome/Razão..." onkeyup="applyFilters()">
+                    </div>
+                    <div class="col-lg-4 col-md-4">
+                        <label class="form-label form-label-sm mb-1">Período de Vencimento</label>
+                        <input type="text" class="form-control form-control-sm" id="filterPeriodoVencimento" placeholder="Selecionar período..." readonly onclick="abrirCalendarioPeriodo()">
+                        <input type="hidden" id="dataVencimentoInicio">
+                        <input type="hidden" id="dataVencimentoFim">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Divisor -->
+            <hr class="my-2" style="opacity: 0.3;">
+            
+            <!-- Filtros Avançados -->
+            <div class="mb-2">
+                <small class="text-muted fw-semibold d-block mb-1">
+                    <i class="fas fa-sliders-h me-1"></i>Filtros Avançados
+                </small>
+                <div class="row g-2">
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label form-label-sm mb-1">Categorias</label>
+                        <input type="text" class="form-control form-control-sm" id="filterCategoria" placeholder="Selecionar categorias..." readonly onclick="abrirModalCategorias()">
+                        <input type="hidden" id="categoriasSelecionadas">
+                    </div>
+                    <div class="col-lg-4 col-md-6">
+                        <label class="form-label form-label-sm mb-1">Beneficiários</label>
+                        <input type="text" class="form-control form-control-sm" id="filterBeneficiario" placeholder="Buscar por nome do beneficiário..." onkeyup="applyFilters()">
+                    </div>
+                    <div class="col-lg-4 col-md-12">
+                        <label class="form-label form-label-sm mb-1">Contas/Bancos</label>
+                        <input type="text" class="form-control form-control-sm" id="filterConta" placeholder="Selecionar contas..." readonly onclick="abrirModalContas()">
+                        <input type="hidden" id="contasSelecionadas">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botão Limpar -->
+            <div class="text-center pt-1">
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="clearFilters()">
+                    <i class="fas fa-times me-1" style="font-size: 0.7rem;"></i>Limpar Filtros
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -62,18 +229,15 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-fixed">
                 <thead>
                     <tr>
-                        <th onclick="sortTable('status')">Status <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('fornecedor')">Fornecedor <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('data_vencimento')">Vencimento <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('valor')">Valor <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('data_pagamento')">Data Pagamento <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('beneficiario')">Beneficiário <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('conta')">Banco/Conta <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('categoria')">Categoria <i class="fas fa-sort"></i></th>
-                        <th>Ações</th>
+                        <th onclick="sortTable('status')" style="width: 110px;">Status <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('fornecedor')" style="width: auto;">Fornecedor <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('data_vencimento')" style="width: 140px;">Venc/Valor <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('beneficiario')" style="width: auto;" class="hide-mobile">Beneficiário <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('conta')" style="width: auto;" class="hide-mobile">Conta/Categ <i class="fas fa-sort"></i></th>
+                        <th style="width: 140px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -81,14 +245,14 @@
             </table>
         </div>
         
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <div>
-                <span id="recordCount">0 registros encontrados</span>
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
+            <div class="order-2 order-md-1">
+                <span id="recordCount" class="text-muted small">0 registros encontrados</span>
                 <span id="totalValue" class="ms-3 fw-bold text-primary"></span>
             </div>
-            <div>
+            <div class="order-1 order-md-2">
                 <nav>
-                    <ul class="pagination" id="pagination">
+                    <ul class="pagination pagination-sm mb-0" id="pagination">
                     </ul>
                 </nav>
             </div>
@@ -98,40 +262,54 @@
 
 <!-- Modal para Adicionar/Editar -->
 <div class="modal fade" id="contaPagarModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">Adicionar Conta a Pagar</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header text-white" style="background: var(--primary-color);">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>Adicionar Conta a Pagar
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="contaPagarForm">
                     <input type="hidden" id="contaPagarId">
                     
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="fornecedor_id" class="form-label">Fornecedor *</label>
+                    <!-- Seção: Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                            </h6>
+                        </div>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="fornecedor_id" class="form-label fw-semibold">Fornecedor *</label>
                             <select class="form-select" id="fornecedor_id" required>
                                 <option value="">Selecione o fornecedor</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="beneficiario_id" class="form-label">Beneficiário (opcional)</label>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="beneficiario_id" class="form-label fw-semibold">Beneficiário</label>
                             <select class="form-select" id="beneficiario_id">
                                 <option value="">Nenhum beneficiário</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="conta_id" class="form-label">Conta *</label>
+                        <div class="col-lg-4 col-md-12 mb-3">
+                            <label for="conta_id" class="form-label fw-semibold">Conta/Banco *</label>
                             <select class="form-select" id="conta_id" required>
                                 <option value="">Selecione a conta</option>
                             </select>
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="categoria" class="form-label">Categoria *</label>
+                    <!-- Seção: Categoria e Valores -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-tags me-2"></i>Categoria e Valores
+                            </h6>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="categoria" class="form-label fw-semibold">Categoria *</label>
                             <select class="form-select" id="categoria" required>
                                 <option value="">Selecione a categoria</option>
                                 <!-- Categorias normais -->
@@ -160,67 +338,87 @@
                                 </optgroup>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="status" class="form-label">Status *</label>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <label for="status" class="form-label fw-semibold">Status *</label>
                             <select class="form-select" id="status" required onchange="controlarDataPagamento()">
                                 <option value="Pendente">Pendente</option>
                                 <option value="Pago">Pago</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="valor" class="form-label">Valor *</label>
-                            <input type="number" class="form-control" id="valor" step="0.01" min="0" required>
-                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                             <label for="valor" class="form-label fw-semibold">Valor *</label>
+                             <input type="text" class="form-control" id="valor" required placeholder="0,00" oninput="formatarValor(this)">
+                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="data_emissao" class="form-label">Data Emissão *</label>
+                    <!-- Seção: Datas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-calendar-alt me-2"></i>Datas
+                            </h6>
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="data_emissao" class="form-label fw-semibold">Data Emissão *</label>
                             <input type="date" class="form-control" id="data_emissao" required>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="data_vencimento" class="form-label">Data Vencimento *</label>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="data_vencimento" class="form-label fw-semibold">Data Vencimento *</label>
                             <input type="date" class="form-control" id="data_vencimento" required>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="data_pagamento" class="form-label">Data Pagamento</label>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="data_pagamento" class="form-label fw-semibold">Data Pagamento</label>
                             <input type="date" class="form-control" id="data_pagamento">
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="tipo_pagamento" class="form-label">Tipo de Pagamento</label>
-                            <select class="form-select" id="tipo_pagamento">
-                                <option value="">Selecione o tipo</option>
-                            </select>
+                    <!-- Seção: Pagamento e Recorrência -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-credit-card me-2"></i>Pagamento e Recorrência
+                            </h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check mt-4">
+                        <!-- Campo Tipo de Pagamento removido -->
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Opções de Recorrência</label>
+                            <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="recorrente">
                                 <label class="form-check-label" for="recorrente">
-                                    Conta recorrente
+                                    <i class="fas fa-redo me-1"></i>Conta recorrente
                                 </label>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3" id="recorrenciaSection" style="display: none;">
+                            <label for="meses_repetir" class="form-label fw-semibold">Repetir por quantos meses?</label>
+                            <input type="number" class="form-control" id="meses_repetir" min="1" max="12" placeholder="Ex: 6">
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Máximo 12 meses
                             </div>
                         </div>
                     </div>
                     
-                    <div class="row" id="recorrenciaSection" style="display: none;">
-                        <div class="col-md-6 mb-3">
-                            <label for="meses_repetir" class="form-label">Repetir por quantos meses?</label>
-                            <input type="number" class="form-control" id="meses_repetir" min="1" max="12">
+                    <!-- Seção: Observações -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </h6>
                         </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="observacao" class="form-label">Observação</label>
-                        <textarea class="form-control" id="observacao" rows="3"></textarea>
+                        <div class="col-12 mb-3">
+                            <label for="observacao" class="form-label fw-semibold">Observações Gerais</label>
+                            <textarea class="form-control" id="observacao" rows="3" placeholder="Informações adicionais sobre a conta a pagar..."></textarea>
+                        </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveContaPagar()">Salvar</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn rounded-1" style="border: 1px solid var(--primary-color); color: var(--primary-color);" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn rounded-1 text-white" style="background: var(--primary-color); border: var(--primary-color);" onclick="saveContaPagar()">
+                    <i class="fas fa-save me-1"></i>Salvar
+                </button>
             </div>
         </div>
     </div>
@@ -321,30 +519,7 @@
         }
     }
 
-    async function loadTiposPagamento() {
-        try {
-            const response = await fetchWithAuth('/api/tipos-pagamento');
-            if (response && response.ok) {
-                const tipos = await response.json();
-                const select = document.getElementById('tipo_pagamento');
-                
-                // Limpar opções existentes (exceto a primeira)
-                while (select.children.length > 1) {
-                    select.removeChild(select.lastChild);
-                }
-                
-                // Adicionar tipos
-                tipos.forEach(tipo => {
-                    const option = document.createElement('option');
-                    option.value = tipo.nome;
-                    option.textContent = tipo.nome;
-                    select.appendChild(option);
-                });
-            }
-        } catch (error) {
-            console.error('Erro ao carregar tipos de pagamento:', error);
-        }
-    }
+    // Função loadTiposPagamento removida - não será mais utilizada
 
     async function loadContasPagar() {
         showLoading();
@@ -442,31 +617,48 @@
             }
             
             row.className = rowClass;
+            const fornecedorNome = fornecedor ? fornecedor.nome_razao : 'N/A';
+            const beneficiarioNome = beneficiario ? beneficiario.nome : '-';
+            const contaNome = contaBanco ? contaBanco.nome_conta : 'N/A';
+            const categoriaNome = conta.categoria || 'N/A';
+            
             row.innerHTML = `
-                <td>
-                    <span class="badge ${conta.status === 'Pago' ? 'bg-success' : 'bg-warning text-dark'}">
-                        ${conta.status}
-                    </span>
+                <td class="text-center">
+                    <div>
+                        <span class="badge ${conta.status === 'Pago' ? 'bg-success' : 'bg-warning text-dark'} rounded-1 px-2 py-1" title="${conta.status}">
+                            P
+                        </span>
+                    </div>
+                    ${conta.status === 'Pago' && conta.data_pagamento ? `<div class="small text-muted mt-1">${formatDate(conta.data_pagamento)}</div>` : ''}
                 </td>
-                <td>${fornecedor ? fornecedor.nome_razao : 'N/A'}</td>
-                <td>${formatDate(conta.data_vencimento)}${conta.parcela_total > 1 ? ` (${conta.parcela_numero}/${conta.parcela_total})` : ''}</td>
-                <td class="fw-bold">${formatCurrency(conta.valor)}</td>
-                <td>${conta.data_pagamento ? formatDate(conta.data_pagamento) : '-'}</td>
-                <td>${beneficiario ? beneficiario.nome : '-'}</td>
-                <td>${contaBanco ? contaBanco.nome_conta : 'N/A'}</td>
-                <td>${conta.categoria || 'N/A'}</td>
+                <td class="nome-column" title="${fornecedorNome}">
+                    <span class="${fornecedorNome.length > 25 ? 'truncated-text' : ''}">${truncateText(fornecedorNome, 25)}</span>
+                </td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editContaPagar(${conta.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteContaPagar(${conta.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    ${conta.status === 'Pendente' ? `
-                        <button class="btn btn-sm btn-outline-success" onclick="marcarComoPago(${conta.id})">
-                            <i class="fas fa-check"></i>
+                    <div>${formatDate(conta.data_vencimento)}${conta.parcela_total > 1 ? ` (${conta.parcela_numero}/${conta.parcela_total})` : ''}</div>
+                    <div class="fw-bold text-primary">${formatCurrency(conta.valor)}</div>
+                </td>
+                <td class="nome-column hide-mobile" title="${beneficiarioNome}">
+                    <span class="${beneficiarioNome.length > 20 ? 'truncated-text' : ''}">${truncateText(beneficiarioNome, 20)}</span>
+                </td>
+                <td class="nome-column hide-mobile" title="${contaNome} - ${categoriaNome}">
+                    <div><span class="${contaNome.length > 20 ? 'truncated-text' : ''}">${truncateText(contaNome, 20)}</span></div>
+                    <div class="small text-muted">${truncateText(categoriaNome, 20)}</div>
+                </td>
+                <td class="actions-column">
+                    <div class="btn-group-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editContaPagar(${conta.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
                         </button>
-                    ` : ''}
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteContaPagar(${conta.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        ${conta.status === 'Pendente' ? `
+                            <button class="btn btn-sm btn-outline-success" onclick="marcarComoPago(${conta.id})" title="Marcar como Pago">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                    </div>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -557,7 +749,7 @@
         const status = document.getElementById('filterStatus').value;
         const nomeRazao = document.getElementById('filterNomeRazao').value.toLowerCase();
         const categoriasSelecionadas = document.getElementById('categoriasSelecionadas').value;
-        const beneficiariosSelecionados = document.getElementById('beneficiariosSelecionados').value;
+        const filterBeneficiario = document.getElementById('filterBeneficiario').value.toLowerCase();
         const contasSelecionadas = document.getElementById('contasSelecionadas').value;
         const dataInicio = document.getElementById('dataVencimentoInicio').value;
         const dataFim = document.getElementById('dataVencimentoFim').value;
@@ -585,12 +777,9 @@
                 }
             }
             
-            // Filtro por beneficiários (múltiplos)
-            if (beneficiariosSelecionados) {
-                const beneficiarios = beneficiariosSelecionados.split(',');
-                if (!beneficiario || !beneficiarios.includes(beneficiario.nome)) {
-                    return false;
-                }
+            // Filtro por beneficiário (busca por nome)
+            if (filterBeneficiario && (!beneficiario || !beneficiario.nome.toLowerCase().includes(filterBeneficiario))) {
+                return false;
             }
             
             // Filtro por contas (múltiplas)
@@ -624,7 +813,6 @@
         document.getElementById('filterCategoria').value = '';
         document.getElementById('categoriasSelecionadas').value = '';
         document.getElementById('filterBeneficiario').value = '';
-        document.getElementById('beneficiariosSelecionados').value = '';
         document.getElementById('filterConta').value = '';
         document.getElementById('contasSelecionadas').value = '';
         document.getElementById('filterPeriodoVencimento').value = '';
@@ -670,15 +858,19 @@
     }
 
     function showAddModal() {
-        document.getElementById('modalTitle').textContent = 'Adicionar Conta a Pagar';
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Adicionar Conta a Pagar';
         document.getElementById('contaPagarForm').reset();
         document.getElementById('contaPagarId').value = '';
         document.getElementById('data_emissao').value = new Date().toISOString().split('T')[0];
         document.getElementById('recorrenciaSection').style.display = 'none';
         
-        // Recarregar categorias e tipos
+        // Garantir que a seção de recorrência seja visível por padrão (status Pendente)
+        const recorrenteCheckbox = document.getElementById('recorrente');
+        const opcaoRecorrenciaDiv = recorrenteCheckbox.closest('.col-lg-6');
+        opcaoRecorrenciaDiv.style.display = 'block';
+        
+        // Recarregar categorias
         loadCategoriasPagar();
-        loadTiposPagamento();
         
         new bootstrap.Modal(document.getElementById('contaPagarModal')).show();
     }
@@ -686,7 +878,7 @@
     function editContaPagar(id) {
         const conta = contasPagarData.find(c => c.id === id);
         if (conta) {
-            document.getElementById('modalTitle').textContent = 'Editar Conta a Pagar';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Conta a Pagar';
             document.getElementById('contaPagarId').value = conta.id;
             document.getElementById('fornecedor_id').value = conta.fornecedor_id;
             document.getElementById('beneficiario_id').value = conta.beneficiario_id || '';
@@ -702,10 +894,9 @@
             
             document.getElementById('recorrenciaSection').style.display = conta.recorrente ? 'block' : 'none';
             
-            // Carregar categorias e tipos, depois definir valores selecionados
-            Promise.all([loadCategoriasPagar(), loadTiposPagamento()]).then(() => {
+            // Carregar categorias, depois definir valores selecionados
+            loadCategoriasPagar().then(() => {
                 document.getElementById('categoria').value = conta.categoria;
-                document.getElementById('tipo_pagamento').value = conta.tipo_pagamento || '';
             });
             
             new bootstrap.Modal(document.getElementById('contaPagarModal')).show();
@@ -727,11 +918,10 @@
             categoria: document.getElementById('categoria').value,
             conta_id: parseInt(document.getElementById('conta_id').value),
             status: document.getElementById('status').value,
-            valor: parseFloat(document.getElementById('valor').value),
+            valor: obterValorNumerico(document.getElementById('valor').value),
             data_emissao: document.getElementById('data_emissao').value,
             data_vencimento: document.getElementById('data_vencimento').value,
             data_pagamento: document.getElementById('data_pagamento').value || null,
-            tipo_pagamento: document.getElementById('tipo_pagamento').value,
             recorrente: document.getElementById('recorrente').checked,
             meses_repetir: document.getElementById('recorrente').checked ? parseInt(document.getElementById('meses_repetir').value) || null : null,
             observacao: document.getElementById('observacao').value
@@ -774,8 +964,11 @@
                 if (response && response.ok) {
                     showSuccess('Conta a pagar excluída com sucesso!');
                     await loadInitialData(); // Recarregar todos os dados
+                } else if (response) {
+                    const errorMessage = await handleApiError(response, 'Erro ao excluir conta a pagar');
+                    showError(errorMessage);
                 } else {
-                    showError('Erro ao excluir conta a pagar');
+                    showError('Erro ao conectar com o servidor');
                 }
             } catch (error) {
                 console.error('Erro:', error);
@@ -809,10 +1002,13 @@
         }
     }
 
-    // Função para controlar o preenchimento da data de pagamento
+    // Função para controlar o preenchimento da data de pagamento e recorrência
     function controlarDataPagamento() {
         const status = document.getElementById('status').value;
         const dataPagamentoField = document.getElementById('data_pagamento');
+        const recorrenteCheckbox = document.getElementById('recorrente');
+        const recorrenciaSection = document.getElementById('recorrenciaSection');
+        const opcaoRecorrenciaDiv = recorrenteCheckbox.closest('.col-lg-6');
         
         if (status === 'Pago') {
             // Se não há data preenchida, preencher com a data atual
@@ -820,9 +1016,15 @@
                 const hoje = new Date().toISOString().split('T')[0];
                 dataPagamentoField.value = hoje;
             }
+            // Ocultar opção de recorrência para contas já pagas
+            opcaoRecorrenciaDiv.style.display = 'none';
+            recorrenteCheckbox.checked = false;
+            recorrenciaSection.style.display = 'none';
         } else if (status === 'Pendente') {
             // Se mudou para Pendente, limpar a data de pagamento
             dataPagamentoField.value = '';
+            // Mostrar opção de recorrência para contas pendentes
+            opcaoRecorrenciaDiv.style.display = 'block';
         }
     }
 
@@ -908,86 +1110,7 @@
         applyFilters();
     }
 
-    function abrirModalBeneficiarios() {
-        const modalHtml = `
-            <div class="modal fade" id="beneficiariosModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Selecionar Beneficiários</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodosBeneficiarios()">Selecionar Todos</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoBeneficiarios()">Limpar Seleção</button>
-                            </div>
-                            <div id="beneficiariosCheckboxes">
-                                ${beneficiariosDisponiveis.map(beneficiario => `
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="${beneficiario.nome}" id="beneficiario_${beneficiario.id}">
-                                        <label class="form-check-label" for="beneficiario_${beneficiario.id}">
-                                            ${beneficiario.nome}
-                                        </label>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-primary" onclick="aplicarBeneficiarios()">Aplicar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const modalExistente = document.getElementById('beneficiariosModal');
-        if (modalExistente) modalExistente.remove();
-        
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        const beneficiariosSelecionados = document.getElementById('beneficiariosSelecionados').value;
-        if (beneficiariosSelecionados) {
-            const beneficiarios = beneficiariosSelecionados.split(',');
-            beneficiarios.forEach(beneficiario => {
-                const checkbox = document.querySelector(`input[value="${beneficiario}"]`);
-                if (checkbox) checkbox.checked = true;
-            });
-        }
-        
-        const modal = new bootstrap.Modal(document.getElementById('beneficiariosModal'));
-        modal.show();
-    }
-
-    function selecionarTodosBeneficiarios() {
-        const checkboxes = document.querySelectorAll('#beneficiariosCheckboxes input[type="checkbox"]');
-        checkboxes.forEach(checkbox => checkbox.checked = true);
-    }
-
-    function limparSelecaoBeneficiarios() {
-        const checkboxes = document.querySelectorAll('#beneficiariosCheckboxes input[type="checkbox"]');
-        checkboxes.forEach(checkbox => checkbox.checked = false);
-    }
-
-    function aplicarBeneficiarios() {
-        const checkboxes = document.querySelectorAll('#beneficiariosCheckboxes input[type="checkbox"]:checked');
-        const beneficiariosSelecionados = Array.from(checkboxes).map(cb => cb.value);
-        
-        document.getElementById('beneficiariosSelecionados').value = beneficiariosSelecionados.join(',');
-        
-        if (beneficiariosSelecionados.length > 0) {
-            const texto = beneficiariosSelecionados.length === 1 
-                ? beneficiariosSelecionados[0] 
-                : `${beneficiariosSelecionados.length} beneficiários selecionados`;
-            document.getElementById('filterBeneficiario').value = texto;
-        } else {
-            document.getElementById('filterBeneficiario').value = '';
-        }
-        
-        bootstrap.Modal.getInstance(document.getElementById('beneficiariosModal')).hide();
-        applyFilters();
-    }
+    // Funções do modal de beneficiários removidas - agora usa campo de texto direto
 
     function abrirModalContas() {
         const modalHtml = `
@@ -1135,6 +1258,58 @@
         applyFilters();
     }
 
+    // Controlar ícone do botão de colapso dos filtros
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterCollapse = document.getElementById('filterCollapse');
+        const filterToggleIcon = document.getElementById('filterToggleIcon');
+        
+        filterCollapse.addEventListener('show.bs.collapse', function() {
+            filterToggleIcon.classList.remove('fa-chevron-down');
+            filterToggleIcon.classList.add('fa-chevron-up');
+        });
+        
+        filterCollapse.addEventListener('hide.bs.collapse', function() {
+            filterToggleIcon.classList.remove('fa-chevron-up');
+            filterToggleIcon.classList.add('fa-chevron-down');
+        });
+    });
+
+    // Função para formatar valor monetário permitindo vírgula
+    function formatarValor(input) {
+        let valor = input.value;
+        
+        // Remove caracteres não numéricos exceto vírgula e ponto
+        valor = valor.replace(/[^0-9,\.]/g, '');
+        
+        // Substitui vírgula por ponto para padronização
+        valor = valor.replace(',', '.');
+        
+        // Garante apenas um ponto decimal
+        const partes = valor.split('.');
+        if (partes.length > 2) {
+            valor = partes[0] + '.' + partes.slice(1).join('');
+        }
+        
+        // Limita a 2 casas decimais
+        if (partes[1] && partes[1].length > 2) {
+            valor = partes[0] + '.' + partes[1].substring(0, 2);
+        }
+        
+        input.value = valor;
+    }
+
+    // Função para obter valor numérico do campo
+    function obterValorNumerico(valor) {
+        if (!valor) return 0;
+        // Converte vírgula para ponto e retorna como float
+        return parseFloat(valor.replace(',', '.')) || 0;
+    }
+
+    // Função para truncar texto
+    function truncateText(text, maxLength = 30) {
+        if (!text || text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
 
 </script>
 {% endblock %}

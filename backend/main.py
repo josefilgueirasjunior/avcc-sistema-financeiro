@@ -17,8 +17,106 @@ from slowapi.util import get_remote_address
 from . import database, schemas, auth
 from .version import get_version_info, get_version_string
 
-# Configuração do Rate Limiter
+# Configuração do limitador de taxa
 limiter = Limiter(key_func=get_remote_address)
+
+# Funções auxiliares para validação de integridade referencial
+def check_fornecedor_dependencies(db: Session, fornecedor_id: int):
+    """Verifica se um fornecedor/doador tem dependências que impedem sua exclusão"""
+    dependencies = []
+    
+    # Verificar contas a pagar
+    contas_pagar = db.query(database.ContaPagar).filter(database.ContaPagar.fornecedor_id == fornecedor_id).count()
+    if contas_pagar > 0:
+        dependencies.append(f"{contas_pagar} conta(s) a pagar")
+    
+    # Verificar contas a receber
+    contas_receber = db.query(database.ContaReceber).filter(database.ContaReceber.fornecedor_doador_id == fornecedor_id).count()
+    if contas_receber > 0:
+        dependencies.append(f"{contas_receber} conta(s) a receber")
+    
+    return dependencies
+
+def check_beneficiario_dependencies(db: Session, beneficiario_id: int):
+    """Verifica se um beneficiário tem dependências que impedem sua exclusão"""
+    dependencies = []
+    
+    # Verificar contas a pagar
+    contas_pagar = db.query(database.ContaPagar).filter(database.ContaPagar.beneficiario_id == beneficiario_id).count()
+    if contas_pagar > 0:
+        dependencies.append(f"{contas_pagar} conta(s) a pagar")
+    
+    return dependencies
+
+def check_conta_dependencies(db: Session, conta_id: int):
+    """Verifica se uma conta bancária tem dependências que impedem sua exclusão"""
+    dependencies = []
+    
+    # Verificar contas a pagar
+    contas_pagar = db.query(database.ContaPagar).filter(database.ContaPagar.conta_id == conta_id).count()
+    if contas_pagar > 0:
+        dependencies.append(f"{contas_pagar} conta(s) a pagar")
+    
+    # Verificar contas a receber
+    contas_receber = db.query(database.ContaReceber).filter(database.ContaReceber.conta_id == conta_id).count()
+    if contas_receber > 0:
+        dependencies.append(f"{contas_receber} conta(s) a receber")
+    
+    # Verificar doações avulsas
+    doacoes = db.query(database.DoacaoAvulsa).filter(database.DoacaoAvulsa.conta_id == conta_id).count()
+    if doacoes > 0:
+        dependencies.append(f"{doacoes} doação(ões) avulsa(s)")
+    
+    # Verificar movimentações financeiras
+    movimentacoes = db.query(database.MovimentacaoFinanceira).filter(database.MovimentacaoFinanceira.conta_id == conta_id).count()
+    if movimentacoes > 0:
+        dependencies.append(f"{movimentacoes} movimentação(ões) financeira(s)")
+    
+    return dependencies
+
+def check_usuario_dependencies(db: Session, usuario_id: int):
+    """Verifica se um usuário tem dependências que impedem sua exclusão"""
+    dependencies = []
+    
+    # Verificar movimentações financeiras criadas
+    movimentacoes = db.query(database.MovimentacaoFinanceira).filter(database.MovimentacaoFinanceira.usuario_id == usuario_id).count()
+    if movimentacoes > 0:
+        dependencies.append(f"{movimentacoes} movimentação(ões) financeira(s) criada(s)")
+    
+    return dependencies
+
+def check_categoria_pagar_dependencies(db: Session, categoria_nome: str):
+    """Verifica se uma categoria de pagar está sendo usada"""
+    dependencies = []
+    
+    # Verificar contas a pagar que usam esta categoria
+    contas_pagar = db.query(database.ContaPagar).filter(database.ContaPagar.categoria == categoria_nome).count()
+    if contas_pagar > 0:
+        dependencies.append(f"{contas_pagar} conta(s) a pagar")
+    
+    return dependencies
+
+def check_categoria_receber_dependencies(db: Session, categoria_nome: str):
+    """Verifica se uma categoria de receber está sendo usada"""
+    dependencies = []
+    
+    # Verificar contas a receber que usam esta categoria
+    contas_receber = db.query(database.ContaReceber).filter(database.ContaReceber.categoria == categoria_nome).count()
+    if contas_receber > 0:
+        dependencies.append(f"{contas_receber} conta(s) a receber")
+    
+    return dependencies
+
+def check_origem_receber_dependencies(db: Session, origem_nome: str):
+    """Verifica se uma origem de receber está sendo usada"""
+    dependencies = []
+    
+    # Verificar contas a receber que usam esta origem
+    contas_receber = db.query(database.ContaReceber).filter(database.ContaReceber.origem == origem_nome).count()
+    if contas_receber > 0:
+        dependencies.append(f"{contas_receber} conta(s) a receber")
+    
+    return dependencies
 app = FastAPI(title="Sistema Financeiro Associação")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -132,11 +230,18 @@ def update_fornecedor_doador(fornecedor_id: int, fornecedor: schemas.FornecedorD
 def delete_fornecedor_doador(fornecedor_id: int, db: Session = Depends(database.get_db), current_user: database.Usuario = Depends(auth.get_current_user)):
     db_fornecedor = db.query(database.FornecedorDoador).filter(database.FornecedorDoador.id == fornecedor_id).first()
     if db_fornecedor is None:
-        raise HTTPException(status_code=404, detail="Fornecedor/Doador not found")
+        raise HTTPException(status_code=404, detail="Fornecedor/Doador não encontrado")
+    
+    # Verificar dependências antes de excluir
+    dependencies = check_fornecedor_dependencies(db, fornecedor_id)
+    if dependencies:
+        detail_msg = f"Não é possível excluir este fornecedor/doador pois ele está vinculado a: {', '.join(dependencies)}. "
+        detail_msg += "Para excluir, primeiro remova ou transfira estes vínculos para outro fornecedor/doador."
+        raise HTTPException(status_code=400, detail=detail_msg)
     
     db.delete(db_fornecedor)
     db.commit()
-    return {"message": "Fornecedor/Doador deleted successfully"}
+    return {"message": "Fornecedor/Doador excluído com sucesso"}
 
 # Rotas para Beneficiários
 @app.get("/api/beneficiarios", response_model=List[schemas.Beneficiario])
@@ -175,11 +280,18 @@ def update_beneficiario(beneficiario_id: int, beneficiario: schemas.Beneficiario
 def delete_beneficiario(beneficiario_id: int, db: Session = Depends(database.get_db), current_user: database.Usuario = Depends(auth.get_current_user)):
     db_beneficiario = db.query(database.Beneficiario).filter(database.Beneficiario.id == beneficiario_id).first()
     if db_beneficiario is None:
-        raise HTTPException(status_code=404, detail="Beneficiário not found")
+        raise HTTPException(status_code=404, detail="Beneficiário não encontrado")
+    
+    # Verificar dependências antes de excluir
+    dependencies = check_beneficiario_dependencies(db, beneficiario_id)
+    if dependencies:
+        detail_msg = f"Não é possível excluir este beneficiário pois ele está vinculado a: {', '.join(dependencies)}. "
+        detail_msg += "Para excluir, primeiro remova ou transfira estes vínculos para outro beneficiário."
+        raise HTTPException(status_code=400, detail=detail_msg)
     
     db.delete(db_beneficiario)
     db.commit()
-    return {"message": "Beneficiário deleted successfully"}
+    return {"message": "Beneficiário excluído com sucesso"}
 
 # Rotas para Contas
 @app.get("/api/contas", response_model=List[schemas.Conta])
@@ -218,11 +330,18 @@ def update_conta(conta_id: int, conta: schemas.ContaCreate, db: Session = Depend
 def delete_conta(conta_id: int, db: Session = Depends(database.get_db), current_user: database.Usuario = Depends(auth.get_current_user)):
     db_conta = db.query(database.Conta).filter(database.Conta.id == conta_id).first()
     if db_conta is None:
-        raise HTTPException(status_code=404, detail="Conta not found")
+        raise HTTPException(status_code=404, detail="Conta não encontrada")
+    
+    # Verificar dependências antes de excluir
+    dependencies = check_conta_dependencies(db, conta_id)
+    if dependencies:
+        detail_msg = f"Não é possível excluir esta conta pois ela está vinculada a: {', '.join(dependencies)}. "
+        detail_msg += "Para excluir, primeiro remova ou transfira estes vínculos para outra conta."
+        raise HTTPException(status_code=400, detail=detail_msg)
     
     db.delete(db_conta)
     db.commit()
-    return {"message": "Conta deleted successfully"}
+    return {"message": "Conta excluída com sucesso"}
 
 # Rotas para Contas a Pagar
 @app.get("/api/contas-pagar", response_model=List[schemas.ContaPagar])
@@ -654,6 +773,17 @@ def delete_user(user_id: int, db: Session = Depends(database.get_db), current_us
     if db_user is None:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
+    # Impedir que o usuário exclua a si mesmo
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Não é possível excluir seu próprio usuário")
+    
+    # Verificar dependências antes de excluir
+    dependencies = check_usuario_dependencies(db, user_id)
+    if dependencies:
+        detail_msg = f"Não é possível excluir este usuário pois ele possui: {', '.join(dependencies)}. "
+        detail_msg += "Este histórico é importante para auditoria e não pode ser removido."
+        raise HTTPException(status_code=400, detail=detail_msg)
+    
     db.delete(db_user)
     db.commit()
     return {"message": "Usuário excluído com sucesso"}
@@ -700,32 +830,18 @@ def delete_categoria_pagar(categoria_id: int, db: Session = Depends(database.get
     if db_categoria is None:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
     
+    # Verificar dependências antes de desativar
+    dependencies = check_categoria_pagar_dependencies(db, db_categoria.nome)
+    if dependencies:
+        detail_msg = f"Não é possível desativar esta categoria pois ela está sendo usada em: {', '.join(dependencies)}. "
+        detail_msg += "Para desativar, primeiro altere a categoria dessas contas."
+        raise HTTPException(status_code=400, detail=detail_msg)
+    
     db_categoria.ativo = False
     db.commit()
     return {"message": "Categoria desativada com sucesso"}
 
-# Rotas para Tipos de Pagamento
-@app.get("/api/tipos-pagamento", response_model=List[schemas.TipoPagamento])
-def read_tipos_pagamento(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db), current_user: database.Usuario = Depends(auth.get_current_user)):
-    return db.query(database.TipoPagamento).filter(database.TipoPagamento.ativo == True).offset(skip).limit(limit).all()
-
-@app.post("/api/tipos-pagamento", response_model=schemas.TipoPagamento)
-def create_tipo_pagamento(tipo: schemas.TipoPagamentoCreate, db: Session = Depends(database.get_db), current_user: database.Usuario = Depends(auth.get_current_user)):
-    db_tipo = database.TipoPagamento(**tipo.dict())
-    db.add(db_tipo)
-    db.commit()
-    db.refresh(db_tipo)
-    return db_tipo
-
-@app.delete("/api/tipos-pagamento/{tipo_id}")
-def delete_tipo_pagamento(tipo_id: int, db: Session = Depends(database.get_db), current_user: database.Usuario = Depends(auth.get_current_user)):
-    db_tipo = db.query(database.TipoPagamento).filter(database.TipoPagamento.id == tipo_id).first()
-    if db_tipo is None:
-        raise HTTPException(status_code=404, detail="Tipo de pagamento não encontrado")
-    
-    db_tipo.ativo = False
-    db.commit()
-    return {"message": "Tipo de pagamento desativado com sucesso"}
+# Rotas para Tipos de Pagamento removidas - não serão mais utilizadas
 
 # Rotas para Categorias de Receber
 @app.get("/api/categorias-receber", response_model=List[schemas.CategoriaReceber])
@@ -745,6 +861,13 @@ def delete_categoria_receber(categoria_id: int, db: Session = Depends(database.g
     db_categoria = db.query(database.CategoriaReceber).filter(database.CategoriaReceber.id == categoria_id).first()
     if db_categoria is None:
         raise HTTPException(status_code=404, detail="Categoria não encontrada")
+    
+    # Verificar dependências antes de desativar
+    dependencies = check_categoria_receber_dependencies(db, db_categoria.nome)
+    if dependencies:
+        detail_msg = f"Não é possível desativar esta categoria pois ela está sendo usada em: {', '.join(dependencies)}. "
+        detail_msg += "Para desativar, primeiro altere a categoria dessas contas."
+        raise HTTPException(status_code=400, detail=detail_msg)
     
     db_categoria.ativo = False
     db.commit()
@@ -768,6 +891,13 @@ def delete_origem_receber(origem_id: int, db: Session = Depends(database.get_db)
     db_origem = db.query(database.OrigemReceber).filter(database.OrigemReceber.id == origem_id).first()
     if db_origem is None:
         raise HTTPException(status_code=404, detail="Origem não encontrada")
+    
+    # Verificar dependências antes de desativar
+    dependencies = check_origem_receber_dependencies(db, db_origem.nome)
+    if dependencies:
+        detail_msg = f"Não é possível desativar esta origem pois ela está sendo usada em: {', '.join(dependencies)}. "
+        detail_msg += "Para desativar, primeiro altere a origem dessas contas."
+        raise HTTPException(status_code=400, detail=detail_msg)
     
     db_origem.ativo = False
     db.commit()
@@ -890,7 +1020,12 @@ def healthcheck():
 @app.get("/api/auth/check")
 def check_auth(current_user: database.Usuario = Depends(auth.get_current_user)):
     """Endpoint simples para verificar se a autenticação ainda é válida"""
-    return {"valid": True, "user_id": current_user.id}
+    return {
+        "valid": True, 
+        "user_id": current_user.id,
+        "username": current_user.username,
+        "nome_completo": current_user.nome_completo
+    }
 
 @app.get("/api/version")
 def get_version():

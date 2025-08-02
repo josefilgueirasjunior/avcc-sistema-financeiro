@@ -82,9 +82,10 @@
             <table class="table table-hover mb-0 table-fixed">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 15%; padding: 0.75rem 0.5rem;">ID</th>
-                        <th style="width: 65%; padding: 0.75rem 0.5rem;">Nome de Usuário</th>
-                        <th style="width: 20%; padding: 0.75rem 0.5rem;">Ações</th>
+                        <th style="width: 10%; padding: 0.75rem 0.5rem;">ID</th>
+                        <th style="width: 40%; padding: 0.75rem 0.5rem;">Nome Completo</th>
+                        <th style="width: 35%; padding: 0.75rem 0.5rem;">Nome de Usuário</th>
+                        <th style="width: 15%; padding: 0.75rem 0.5rem;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -127,8 +128,13 @@
                     <input type="hidden" id="usuarioId">
                     
                     <div class="mb-3">
+                        <label for="nomeCompleto" class="form-label fw-semibold">Nome Completo *</label>
+                        <input type="text" class="form-control" id="nomeCompleto" required placeholder="Digite o nome completo da pessoa">
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="newUsername" class="form-label fw-semibold">Nome de Usuário *</label>
-                        <input type="text" class="form-control" id="newUsername" required>
+                        <input type="text" class="form-control" id="newUsername" required placeholder="Digite o nome de usuário para login">
                     </div>
                     
                     <div class="mb-3">
@@ -326,12 +332,19 @@
         tableBody.innerHTML = "";
 
         pageData.forEach(usuario => {
-            const usernameDisplay = truncateText(usuario.username, 30);
-            const isUsernameTruncated = usuario.username.length > 30;
+            const nomeCompleto = usuario.nome_completo || 'Não informado';
+            const nomeCompletoDisplay = truncateText(nomeCompleto, 25);
+            const isNomeCompletoTruncated = nomeCompleto.length > 25;
+            
+            const usernameDisplay = truncateText(usuario.username, 20);
+            const isUsernameTruncated = usuario.username.length > 20;
             
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${usuario.id}</td>
+                <td class="nome-column" ${isNomeCompletoTruncated ? `title="${nomeCompleto}"` : ''}>
+                    <span class="${isNomeCompletoTruncated ? 'truncated-text' : ''}">${nomeCompletoDisplay}</span>
+                </td>
                 <td class="nome-column" ${isUsernameTruncated ? `title="${usuario.username}"` : ''}>
                     <span class="${isUsernameTruncated ? 'truncated-text' : ''}">${usernameDisplay}</span>
                 </td>
@@ -446,6 +459,7 @@
         document.getElementById("modalTitle").innerHTML = '<i class="fas fa-plus me-2"></i>Adicionar Usuário';
         document.getElementById("usuarioForm").reset();
         document.getElementById("usuarioId").value = "";
+        document.getElementById("nomeCompleto").value = "";
         
         // Limpar validações visuais
         document.getElementById('passwordStrength').style.display = 'none';
@@ -475,6 +489,7 @@
         }
 
         const data = {
+            nome_completo: document.getElementById("nomeCompleto").value,
             username: document.getElementById("newUsername").value,
             password: password
         };
@@ -489,17 +504,11 @@
                 showSuccess("Usuário cadastrado com sucesso!");
                 bootstrap.Modal.getInstance(document.getElementById("usuarioModal")).hide();
                 loadUsuarios();
-            } else {
-                const errorData = await response.json();
-                let errorMessage = 'Erro ao salvar usuário';
-                if (errorData.detail) {
-                    if (Array.isArray(errorData.detail)) {
-                        errorMessage += ': ' + errorData.detail.map(err => err.msg || err).join(', ');
-                    } else {
-                        errorMessage += ': ' + errorData.detail;
-                    }
-                }
+            } else if (response) {
+                const errorMessage = await handleApiError(response, "Erro ao salvar usuário");
                 showError(errorMessage);
+            } else {
+                showError("Erro ao conectar com o servidor");
             }
         } catch (error) {
             console.error("Erro:", error);
@@ -517,8 +526,11 @@
                 if (response && response.ok) {
                     showSuccess("Usuário excluído com sucesso!");
                     loadUsuarios();
+                } else if (response) {
+                    const errorMessage = await handleApiError(response, "Erro ao excluir usuário");
+                    showError(errorMessage);
                 } else {
-                    showError("Erro ao excluir usuário");
+                    showError("Erro ao conectar com o servidor");
                 }
             } catch (error) {
                 console.error("Erro:", error);

@@ -2,6 +2,147 @@
 
 {% block title %}Contas a Receber - Sistema Financeiro{% endblock %}
 
+{% block extra_css %}
+<style>
+    .form-label-sm {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .filter-section .bg-light {
+        background-color: #f8f9fa !important;
+        border: 1px solid #e9ecef;
+    }
+    
+    .filter-section .form-control-sm:focus,
+    .filter-section .form-select-sm:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25);
+    }
+    
+    .filter-section hr {
+        border-color: #dee2e6;
+        margin: 0.5rem 0;
+    }
+    
+    .filter-section .text-muted {
+        color: #6c757d !important;
+        font-size: 0.8rem;
+    }
+    
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .table-fixed th {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .table-fixed td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+    }
+    
+    .table-fixed .nome-column {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+        position: relative;
+    }
+    
+    .table-fixed .nome-column[title]:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    
+    .truncated-text {
+        border-bottom: 1px dotted #6c757d;
+        cursor: help;
+    }
+    
+    .actions-column {
+        white-space: nowrap;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 2px;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 768px) {
+        .table-fixed {
+            font-size: 0.8rem;
+        }
+        
+        .table-fixed th {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.2rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.3rem;
+        }
+        
+        /* Ocultar colunas menos importantes em mobile */
+        .table-fixed .hide-mobile {
+            display: none;
+        }
+        
+        /* Ajustar larguras das colunas em mobile */
+        .table-fixed th:nth-child(1) { width: 60px !important; } /* Status */
+        .table-fixed th:nth-child(2) { width: 140px !important; } /* Nome/Razão */
+        .table-fixed th:nth-child(3) { width: 120px !important; } /* Venc/Valor */
+        .table-fixed th:nth-child(4) { width: 100px !important; } /* Ações */
+        
+        .btn-group-actions {
+            flex-direction: row;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-group-actions .btn {
+            padding: 0.2rem 0.3rem;
+            font-size: 0.7rem;
+            min-width: 28px;
+        }
+        
+        .btn-group-actions .btn i {
+            font-size: 0.8rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .table-fixed th {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.15rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.2rem;
+        }
+        
+        /* Ajustar larguras para telas muito pequenas */
+        .table-fixed th:nth-child(1) { width: 50px !important; } /* Status */
+        .table-fixed th:nth-child(2) { width: 120px !important; } /* Nome/Razão */
+        .table-fixed th:nth-child(3) { width: 110px !important; } /* Venc/Valor */
+        .table-fixed th:nth-child(4) { width: 90px !important; } /* Ações */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div class="d-flex justify-content-between align-items-center">
@@ -9,45 +150,86 @@
             <h1 class="page-title">Contas a Receber</h1>
             <p class="page-subtitle">Gerencie as receitas e contas a receber da associação</p>
         </div>
-        <button class="btn btn-primary" onclick="abrirModal()">
-            <i class="fas fa-plus me-2"></i>Adicionar Nova
+        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 flex-shrink-0" onclick="abrirModal()">
+            <i class="fas fa-plus me-1"></i>
+            <span class="d-none d-md-inline">Adicionar Nova</span>
+            <span class="d-md-none">Adicionar</span>
         </button>
     </div>
 </div>
 
-<div class="filter-section">
-    <div class="row">
-        <div class="col-md-2">
-            <select class="form-select" id="filterStatus" onchange="aplicarFiltros()">
-                <option value="">Todos Status</option>
-                <option value="Pendente">Pendente</option>
-                <option value="Recebido">Recebido</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="text" class="form-control" id="filterNomeRazao" placeholder="Nome/Razão..." onkeyup="aplicarFiltros()">
-        </div>
-        <div class="col-md-1">
-            <input type="text" class="form-control" id="filterCategoria" placeholder="Categorias..." readonly onclick="abrirModalCategorias()">
-            <input type="hidden" id="categoriasSelecionadas">
-        </div>
-        <div class="col-md-1">
-            <input type="text" class="form-control" id="filterOrigem" placeholder="Origens..." readonly onclick="abrirModalOrigens()">
-            <input type="hidden" id="origensSelecionadas">
-        </div>
-        <div class="col-md-2">
-            <input type="text" class="form-control" id="filterConta" placeholder="Contas..." readonly onclick="abrirModalContas()">
-            <input type="hidden" id="contasSelecionadas">
-        </div>
-        <div class="col-md-2">
-            <input type="text" class="form-control" id="filterPeriodoVencimento" placeholder="Período Vencimento..." readonly onclick="abrirCalendarioPeriodo()">
-            <input type="hidden" id="dataVencimentoInicio">
-            <input type="hidden" id="dataVencimentoFim">
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-secondary w-100" onclick="limparFiltros()">
-                <i class="fas fa-times me-2"></i>Limpar
-            </button>
+<div class="filter-section mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="fw-semibold" style="color: var(--primary-color);">
+            <i class="fas fa-filter me-1"></i>Filtros
+        </small>
+        <button class="btn btn-outline-primary btn-sm rounded-1 py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-chevron-down" id="filterToggleIcon" style="font-size: 0.7rem;"></i>
+        </button>
+    </div>
+    
+    <div class="collapse" id="filterCollapse">
+        <div class="bg-light rounded px-3 py-2">
+            <!-- Filtros Básicos -->
+            <div class="mb-2">
+                <small class="text-muted fw-semibold d-block mb-1">
+                    <i class="fas fa-search me-1"></i>Filtros Básicos
+                </small>
+                <div class="row g-2">
+                    <div class="col-lg-2 col-md-3">
+                        <label class="form-label form-label-sm mb-1">Status</label>
+                        <select class="form-select form-select-sm" id="filterStatus" onchange="aplicarFiltros()">
+                            <option value="">Todos Status</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Recebido">Recebido</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-6 col-md-5">
+                        <label class="form-label form-label-sm mb-1">Nome/Razão</label>
+                        <input type="text" class="form-control form-control-sm" id="filterNomeRazao" placeholder="Nome/Razão..." onkeyup="aplicarFiltros()">
+                    </div>
+                    <div class="col-lg-4 col-md-4">
+                        <label class="form-label form-label-sm mb-1">Período de Vencimento</label>
+                        <input type="text" class="form-control form-control-sm" id="filterPeriodoVencimento" placeholder="Selecionar período..." readonly onclick="abrirCalendarioPeriodo()">
+                        <input type="hidden" id="dataVencimentoInicio">
+                        <input type="hidden" id="dataVencimentoFim">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Divisor -->
+            <hr class="my-2" style="opacity: 0.3;">
+            
+            <!-- Filtros Avançados -->
+            <div class="mb-2">
+                <small class="text-muted fw-semibold d-block mb-1">
+                    <i class="fas fa-sliders-h me-1"></i>Filtros Avançados
+                </small>
+                <div class="row g-2">
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label form-label-sm mb-1">Categorias</label>
+                        <input type="text" class="form-control form-control-sm" id="filterCategoria" placeholder="Selecionar categorias..." readonly onclick="abrirModalCategorias()">
+                        <input type="hidden" id="categoriasSelecionadas">
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <label class="form-label form-label-sm mb-1">Origens</label>
+                        <input type="text" class="form-control form-control-sm" id="filterOrigem" placeholder="Selecionar origens..." readonly onclick="abrirModalOrigens()">
+                        <input type="hidden" id="origensSelecionadas">
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <label class="form-label form-label-sm mb-1">Contas/Bancos</label>
+                        <input type="text" class="form-control form-control-sm" id="filterConta" placeholder="Selecionar contas..." readonly onclick="abrirModalContas()">
+                        <input type="hidden" id="contasSelecionadas">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botão Limpar -->
+            <div class="text-center pt-1">
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="limparFiltros()">
+                    <i class="fas fa-times me-1" style="font-size: 0.7rem;"></i>Limpar Filtros
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -62,19 +244,15 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-fixed">
                 <thead>
                     <tr>
-                        <th>Status</th>
-                        <th>Origem</th>
-                        <th>Nome/Razão</th>
-                        <th>Categoria</th>
-                        <th>Conta</th>
-                        <th>Emissão</th>
-                        <th>Vencimento</th>
-                        <th>Valor</th>
-                        <th>Recebimento</th>
-                        <th>Ações</th>
+                        <th style="width: 80px;">Status</th>
+                        <th class="hide-mobile" style="width: 150px;">Origem/Emissão</th>
+                        <th style="width: 200px;">Nome/Razão</th>
+                        <th class="hide-mobile" style="width: 180px;">Conta/Categ</th>
+                        <th style="width: 140px;">Venc/Valor</th>
+                        <th style="width: 120px;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -99,106 +277,138 @@
 
 <!-- Modal para Adicionar/Editar -->
 <div class="modal fade" id="contaReceberModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalTitle">Adicionar Conta a Receber</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header text-white" style="background: var(--primary-color);">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>Adicionar Conta a Receber
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="contaReceberForm">
                     <input type="hidden" id="contaReceberId">
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="origem" class="form-label">Origem *</label>
+                    <!-- Seção: Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                            </h6>
+                        </div>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="origem" class="form-label fw-semibold">Origem *</label>
                             <select class="form-select" id="origem" required>
                                 <option value="">Selecione a origem</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="conta_id" class="form-label">Conta *</label>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="fornecedor_doador_id" class="form-label fw-semibold">Fornecedor/Doador *</label>
+                            <select class="form-select" id="fornecedor_doador_id" required>
+                                <option value="">Selecione um Fornecedor/Doador</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-4 col-md-12 mb-3">
+                            <label for="conta_id" class="form-label fw-semibold">Conta/Banco *</label>
                             <select class="form-select" id="conta_id" required>
                                 <option value="">Selecione a conta</option>
                             </select>
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="fornecedor_doador_id" class="form-label">Fornecedor/Doador *</label>
-                            <select class="form-select" id="fornecedor_doador_id" required>
-                                <option value="">Selecione um Fornecedor/Doador</option>
-                            </select>
+                    <!-- Seção: Categoria e Valores -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-tags me-2"></i>Categoria e Valores
+                            </h6>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="categoria" class="form-label">Categoria *</label>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="categoria" class="form-label fw-semibold">Categoria *</label>
                             <select class="form-select" id="categoria" required>
                                 <option value="">Selecione a categoria</option>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="status" class="form-label">Status *</label>
-                            <select class="form-select" id="status" required>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <label for="status" class="form-label fw-semibold">Status *</label>
+                            <select class="form-select" id="status" required onchange="controlarDataRecebimento()">
                                 <option value="Pendente">Pendente</option>
                                 <option value="Recebido">Recebido</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="valor" class="form-label">Valor *</label>
-                            <input type="number" class="form-control" id="valor" step="0.01" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="data_emissao" class="form-label">Data Emissão *</label>
-                            <input type="date" class="form-control" id="data_emissao" required>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <label for="valor" class="form-label fw-semibold">Valor *</label>
+                            <input type="text" class="form-control" id="valor" required placeholder="0,00" oninput="formatarValor(this)">
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="data_vencimento" class="form-label">Data Vencimento *</label>
+                    <!-- Seção: Datas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-calendar-alt me-2"></i>Datas
+                            </h6>
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="data_emissao" class="form-label fw-semibold">Data Emissão *</label>
+                            <input type="date" class="form-control" id="data_emissao" required>
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="data_vencimento" class="form-label fw-semibold">Data Vencimento *</label>
                             <input type="date" class="form-control" id="data_vencimento" required>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="data_recebimento" class="form-label">Data Recebimento</label>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="data_recebimento" class="form-label fw-semibold">Data Recebimento</label>
                             <input type="date" class="form-control" id="data_recebimento">
                         </div>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="recorrente">
+                    <!-- Seção: Recorrência -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-redo me-2"></i>Recorrência
+                            </h6>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Opções de Recorrência</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="recorrente" onchange="toggleRecorrencia()">
                                 <label class="form-check-label" for="recorrente">
-                                    Receita recorrente
+                                    <i class="fas fa-redo me-1"></i>Receita recorrente
                                 </label>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div id="recorrenciaSection" style="display: none;">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="meses_repetir" class="form-label">Repetir por quantos meses?</label>
-                                <input type="number" class="form-control" id="meses_repetir" min="1" max="12">
+                        <div class="col-lg-6 col-md-6 mb-3" id="recorrenciaSection" style="display: none;">
+                            <label for="meses_repetir" class="form-label fw-semibold">Repetir por quantos meses?</label>
+                            <input type="number" class="form-control" id="meses_repetir" min="1" max="12" placeholder="Ex: 6">
+                            <div class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Máximo 12 meses
                             </div>
                         </div>
                     </div>
                     
+                    <!-- Seção: Observações -->
                     <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="observacao" class="form-label">Observação</label>
-                            <textarea class="form-control" id="observacao" rows="3"></textarea>
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </h6>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="observacao" class="form-label fw-semibold">Observações Gerais</label>
+                            <textarea class="form-control" id="observacao" rows="3" placeholder="Informações adicionais sobre a conta a receber..."></textarea>
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="salvarConta()">Salvar</button>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn rounded-1" style="border: 1px solid var(--primary-color); color: var(--primary-color);" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn rounded-1 text-white" style="background: var(--primary-color); border: var(--primary-color);" onclick="salvarConta()">
+                    <i class="fas fa-save me-1"></i>Salvar
+                </button>
             </div>
         </div>
     </div>
@@ -400,28 +610,51 @@ function renderizarTabela() {
                 nomeConta = '-';
             }
             
+            const fornecedorNome = conta.fornecedor_doador ? conta.fornecedor_doador.nome_razao : 'N/A';
+            const categoriaNome = conta.categoria || 'N/A';
+            
             row.innerHTML = `
-                <td><span class="badge bg-${conta.status === 'Recebido' ? 'success' : 'warning'}">${conta.status}</span></td>
-                <td>${conta.origem}</td>
-                <td>${conta.fornecedor_doador ? conta.fornecedor_doador.nome_razao : ''}</td>
-                <td>${conta.categoria}</td>
-                <td>${nomeConta}</td>
-                <td>${formatarData(conta.data_emissao)}</td>
-                <td>${formatarData(conta.data_vencimento)}${conta.parcela_total > 1 ? ` (${conta.parcela_numero}/${conta.parcela_total})` : ''}</td>
-                <td>R$ ${parseFloat(conta.valor).toFixed(2)}</td>
-                <td>${conta.data_recebimento ? formatarData(conta.data_recebimento) : '-'}</td>
+                <td class="text-center">
+                    <div>
+                        <span class="badge ${conta.status === 'Recebido' ? 'bg-success' : 'bg-warning text-dark'} rounded-1 px-2 py-1" title="${conta.status}">
+                            ${conta.status === 'Recebido' ? 'R' : 'P'}
+                        </span>
+                    </div>
+                    ${conta.status === 'Recebido' && conta.data_recebimento ? `<div class="small text-muted mt-1">${formatarData(conta.data_recebimento)}</div>` : ''}
+                </td>
+                <td class="nome-column hide-mobile" title="${conta.origem} - ${formatarData(conta.data_emissao)}">
+                    <div><span class="${conta.origem.length > 15 ? 'truncated-text' : ''}">${truncateText(conta.origem, 15)}</span></div>
+                    <div class="small text-muted">${formatarData(conta.data_emissao)}</div>
+                </td>
+                <td class="nome-column" title="${fornecedorNome}">
+                    <span class="${fornecedorNome.length > 25 ? 'truncated-text' : ''}">${truncateText(fornecedorNome, 25)}</span>
+                </td>
+                <td class="nome-column hide-mobile" title="${nomeConta} - ${categoriaNome}">
+                    <div><span class="${nomeConta.length > 20 ? 'truncated-text' : ''}">${truncateText(nomeConta, 20)}</span></div>
+                    <div class="small text-muted">${truncateText(categoriaNome, 20)}</div>
+                </td>
                 <td>
-                    ${conta.status === 'Pendente' ? `
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editarConta(${conta.id})" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-success me-1" onclick="receberConta(${conta.id})" title="Marcar como Recebida">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    ` : ''}
-                    <button class="btn btn-sm btn-outline-danger" onclick="excluirConta(${conta.id})" title="Excluir">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <div>${formatarData(conta.data_vencimento)}${conta.parcela_total > 1 ? ` (${conta.parcela_numero}/${conta.parcela_total})` : ''}</div>
+                    <div class="fw-bold text-primary">R$ ${parseFloat(conta.valor).toFixed(2)}</div>
+                </td>
+                <td class="actions-column">
+                    <div class="btn-group-actions">
+                        ${conta.status === 'Pendente' ? `
+                        <button class="btn btn-sm btn-outline-primary" onclick="editarConta(${conta.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="receberConta(${conta.id})" title="Marcar como Recebida">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        ` : `
+                        <button class="btn btn-sm btn-outline-primary" onclick="editarConta(${conta.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        `}
+                        <button class="btn btn-sm btn-outline-danger" onclick="excluirConta(${conta.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -441,6 +674,69 @@ function formatarData(dataString) {
     if (!dataString) return '';
     const data = new Date(dataString + 'T00:00:00');
     return data.toLocaleDateString('pt-BR');
+}
+
+// Função para truncar texto
+function truncateText(text, maxLength = 30) {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+// Função para controlar data de recebimento
+function controlarDataRecebimento() {
+    const status = document.getElementById('status').value;
+    const dataRecebimentoField = document.getElementById('data_recebimento');
+    const recorrenteCheckbox = document.getElementById('recorrente');
+    const recorrenciaSection = document.getElementById('recorrenciaSection');
+    
+    if (status === 'Recebido') {
+        if (!dataRecebimentoField.value) {
+            dataRecebimentoField.value = new Date().toISOString().split('T')[0];
+        }
+        dataRecebimentoField.required = true;
+        dataRecebimentoField.disabled = false;
+        
+        // Ocultar e limpar recorrência quando status for Recebido
+        recorrenteCheckbox.checked = false;
+        recorrenciaSection.style.display = 'none';
+        document.getElementById('meses_repetir').value = '';
+        recorrenteCheckbox.disabled = true;
+        // Ocultar toda a seção de recorrência
+        document.querySelector('.col-lg-6.col-md-6.mb-3:has(#recorrente)').style.display = 'none';
+    } else {
+        dataRecebimentoField.value = '';
+        dataRecebimentoField.required = false;
+        dataRecebimentoField.disabled = true;
+        
+        // Habilitar recorrência quando status for Pendente
+        recorrenteCheckbox.disabled = false;
+        // Mostrar toda a seção de recorrência
+        document.querySelector('.col-lg-6.col-md-6.mb-3:has(#recorrente)').style.display = 'block';
+    }
+}
+
+// Função para formatar valor
+function formatarValor(input) {
+    let valor = input.value.replace(/\D/g, '');
+    valor = (valor / 100).toFixed(2) + '';
+    valor = valor.replace('.', ',');
+    valor = valor.replace(/(\d)(\d{3})(\d{3}),/g, '$1.$2.$3,');
+    valor = valor.replace(/(\d)(\d{3}),/g, '$1.$2,');
+    input.value = valor;
+}
+
+// Função para controlar exibição da seção de recorrência
+function toggleRecorrencia() {
+    const recorrenteCheckbox = document.getElementById('recorrente');
+    const recorrenciaSection = document.getElementById('recorrenciaSection');
+    
+    if (recorrenteCheckbox.checked) {
+        recorrenciaSection.style.display = 'block';
+    } else {
+        recorrenciaSection.style.display = 'none';
+        // Limpar todos os dados da seção de recorrência
+        document.getElementById('meses_repetir').value = '';
+    }
 }
 
 // Função para editar conta
@@ -555,8 +851,11 @@ async function excluirConta(id) {
             if (response && response.ok) {
                 showSuccess('Conta a receber excluída com sucesso!');
                 carregarContasReceber();
+            } else if (response) {
+                const errorMessage = await handleApiError(response, 'Erro ao excluir conta a receber');
+                showError(errorMessage);
             } else {
-                showError('Erro ao excluir conta a receber');
+                showError('Erro ao conectar com o servidor');
             }
         } catch (error) {
             console.error('Erro:', error);

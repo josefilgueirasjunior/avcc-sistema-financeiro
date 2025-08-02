@@ -5,6 +5,7 @@ from typing import Optional
 # Schemas para Usuario
 class UsuarioBase(BaseModel):
     username: str
+    nome_completo: Optional[str] = None
 
 class UsuarioCreate(UsuarioBase):
     password: str
@@ -93,7 +94,6 @@ class ContaPagarBase(BaseModel):
     data_vencimento: date
     data_pagamento: Optional[date] = None
     valor: float
-    tipo_pagamento: Optional[str] = None
     observacao: Optional[str] = None
     recorrente: bool = False
     meses_repetir: Optional[int] = None
@@ -206,20 +206,7 @@ class CategoriaPagar(CategoriaPagarBase):
     class Config:
         from_attributes = True
 
-class TipoPagamentoBase(BaseModel):
-    nome: str
-    descricao: Optional[str] = None
-    ativo: bool = True
-
-class TipoPagamentoCreate(TipoPagamentoBase):
-    pass
-
-class TipoPagamento(TipoPagamentoBase):
-    id: int
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
+# Schemas TipoPagamento removidos - não serão mais utilizados
 
 class CategoriaReceberBase(BaseModel):
     nome: str

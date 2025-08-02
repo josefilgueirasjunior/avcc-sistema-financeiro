@@ -670,8 +670,11 @@
                 if (response && response.ok) {
                     showSuccess('Fornecedor/Doador excluído com sucesso!');
                     loadFornecedores();
+                } else if (response) {
+                    const errorMessage = await handleApiError(response, 'Erro ao excluir fornecedor/doador');
+                    showError(errorMessage);
                 } else {
-                    showError('Erro ao excluir fornecedor/doador');
+                    showError('Erro ao conectar com o servidor');
                 }
             } catch (error) {
                 console.error('Erro:', error);

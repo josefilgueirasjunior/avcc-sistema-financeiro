@@ -24,6 +24,7 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
+    nome_completo = Column(String)
     hashed_password = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -105,7 +106,6 @@ class ContaPagar(Base):
     data_vencimento = Column(Date)
     data_pagamento = Column(Date)
     valor = Column(Float)
-    tipo_pagamento = Column(String)
     observacao = Column(String)
     recorrente = Column(Boolean, default=False)
     meses_repetir = Column(Integer)
@@ -173,14 +173,7 @@ class CategoriaPagar(Base):
     ativo = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-class TipoPagamento(Base):
-    __tablename__ = "tipos_pagamento"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String, nullable=False, unique=True)
-    descricao = Column(Text)
-    ativo = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+# Classe TipoPagamento removida - não será mais utilizada
 
 class CategoriaReceber(Base):
     __tablename__ = "categorias_receber"
