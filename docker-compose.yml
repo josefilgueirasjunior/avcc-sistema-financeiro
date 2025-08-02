@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  sistema-financeiro:
+    build: .
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./financeiro.db:/app/financeiro.db
+    environment:
+      - PYTHONPATH=/app
+      - DOMAIN=painel.avcccelmacedo.xyz
+    restart: unless-stopped

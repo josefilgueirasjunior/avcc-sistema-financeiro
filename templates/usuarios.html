@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<style>
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .table-fixed th {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .table-fixed td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table-fixed .nome-column {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+        position: relative;
+    }
+    
+    .table-fixed .nome-column[title]:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    
+    .truncated-text {
+        border-bottom: 1px dotted #6c757d;
+        cursor: help;
+    }
+    
+    .actions-column {
+        white-space: nowrap;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 2px;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+
+<div class="page-header mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <h1 class="page-title">Usuários</h1>
+            <p class="page-subtitle">Gerencie os usuários do sistema</p>
+        </div>
+        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 flex-shrink-0" onclick="showAddModal()">
+            <i class="fas fa-plus me-1"></i>
+            <span class="d-none d-md-inline">Adicionar Novo</span>
+            <span class="d-md-none">Adicionar</span>
+        </button>
+    </div>
+</div>
+
+
+
+<div class="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando usuários...</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 table-fixed">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 15%; padding: 0.75rem 0.5rem;">ID</th>
+                        <th style="width: 65%; padding: 0.75rem 0.5rem;">Nome de Usuário</th>
+                        <th style="width: 20%; padding: 0.75rem 0.5rem;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
+            <div class="order-2 order-md-1">
+                <span id="recordCount" class="text-muted small">0 registros encontrados</span>
+            </div>
+            <div class="order-1 order-md-2">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar -->
+<div class="modal fade" id="usuarioModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white" style="background: var(--primary-color);">
+                <h5 class="modal-title d-flex align-items-center" id="modalTitle">
+                    <i class="fas fa-plus me-2"></i>Adicionar Usuário
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Informações do Usuário
+                    </h6>
+                </div>
+                
+                <form id="usuarioForm">
+                    <input type="hidden" id="usuarioId">
+                    
+                    <div class="mb-3">
+                        <label for="newUsername" class="form-label fw-semibold">Nome de Usuário *</label>
+                        <input type="text" class="form-control" id="newUsername" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label fw-semibold">Senha *</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                        <div class="form-text text-muted">
+                            <small class="fw-semibold" style="color: var(--primary-color);">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Mínimo 8 caracteres, incluindo: maiúscula, minúscula, número e caractere especial
+                            </small>
+                        </div>
+                        <div id="passwordStrength" class="mt-2" style="display: none;">
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small id="passwordStrengthText" class="text-muted"></small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label fw-semibold">Confirmar Senha *</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                        <div id="passwordMatch" class="form-text" style="display: none;">
+                            <small id="passwordMatchText"></small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveUsuario()">
+                    <i class="fas fa-save me-1"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let usuariosData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        if (checkAuth()) {
+            loadUsuarios();
+            setupPasswordValidation();
+        }
+        
+        // Atualizar paginação quando a tela for redimensionada
+        window.addEventListener('resize', function() {
+            updatePagination();
+        });
+    });
+    
+    function setupPasswordValidation() {
+        const passwordInput = document.getElementById('newPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        
+        passwordInput.addEventListener('input', function() {
+            validatePasswordStrength(this.value);
+            if (confirmPasswordInput.value) {
+                validatePasswordMatch();
+            }
+        });
+        
+        confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+    }
+    
+    function validatePasswordStrength(password) {
+        const strengthDiv = document.getElementById('passwordStrength');
+        const progressBar = strengthDiv.querySelector('.progress-bar');
+        const strengthText = document.getElementById('passwordStrengthText');
+        
+        if (!password) {
+            strengthDiv.style.display = 'none';
+            return false;
+        }
+        
+        strengthDiv.style.display = 'block';
+        
+        let score = 0;
+        let feedback = [];
+        
+        // Verificar comprimento mínimo
+        if (password.length >= 8) {
+            score += 20;
+        } else {
+            feedback.push('mínimo 8 caracteres');
+        }
+        
+        // Verificar letra minúscula
+        if (/[a-z]/.test(password)) {
+            score += 20;
+        } else {
+            feedback.push('letra minúscula');
+        }
+        
+        // Verificar letra maiúscula
+        if (/[A-Z]/.test(password)) {
+            score += 20;
+        } else {
+            feedback.push('letra maiúscula');
+        }
+        
+        // Verificar número
+        if (/[0-9]/.test(password)) {
+            score += 20;
+        } else {
+            feedback.push('número');
+        }
+        
+        // Verificar caractere especial
+        if (/[^a-zA-Z0-9]/.test(password)) {
+            score += 20;
+        } else {
+            feedback.push('caractere especial');
+        }
+        
+        // Atualizar barra de progresso
+        progressBar.style.width = score + '%';
+        
+        // Definir cor e texto baseado na pontuação
+        if (score < 60) {
+            progressBar.className = 'progress-bar bg-danger';
+            strengthText.textContent = 'Fraca - Faltam: ' + feedback.join(', ');
+            strengthText.className = 'text-danger';
+        } else if (score < 100) {
+            progressBar.className = 'progress-bar bg-warning';
+            strengthText.textContent = 'Média - Faltam: ' + feedback.join(', ');
+            strengthText.className = 'text-warning';
+        } else {
+            progressBar.className = 'progress-bar bg-success';
+            strengthText.textContent = 'Forte - Todos os critérios atendidos';
+            strengthText.className = 'text-success';
+        }
+        
+        return score === 100;
+    }
+    
+    function validatePasswordMatch() {
+        const password = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const matchDiv = document.getElementById('passwordMatch');
+        const matchText = document.getElementById('passwordMatchText');
+        
+        if (!confirmPassword) {
+            matchDiv.style.display = 'none';
+            return false;
+        }
+        
+        matchDiv.style.display = 'block';
+        
+        if (password === confirmPassword) {
+            matchText.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i>Senhas coincidem';
+            matchText.className = 'text-success';
+            return true;
+        } else {
+            matchText.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i>Senhas não coincidem';
+            matchText.className = 'text-danger';
+            return false;
+        }
+    }
+
+    async function loadUsuarios() {
+        showLoading();
+        try {
+            const response = await fetchWithAuth("/api/users");
+            if (response && response.ok) {
+                usuariosData = await response.json();
+                filteredData = [...usuariosData];
+                renderTable();
+            } else {
+                showError("Erro ao carregar usuários");
+            }
+        } catch (error) {
+            console.error("Erro:", error);
+            showError("Erro ao conectar com o servidor");
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById("tableBody");
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = startIndex + recordsPerPage;
+        const pageData = filteredData.slice(startIndex, endIndex);
+
+        tableBody.innerHTML = "";
+
+        pageData.forEach(usuario => {
+            const usernameDisplay = truncateText(usuario.username, 30);
+            const isUsernameTruncated = usuario.username.length > 30;
+            
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${usuario.id}</td>
+                <td class="nome-column" ${isUsernameTruncated ? `title="${usuario.username}"` : ''}>
+                    <span class="${isUsernameTruncated ? 'truncated-text' : ''}">${usernameDisplay}</span>
+                </td>
+                <td class="actions-column">
+                    <div class="btn-group-actions">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUsuario(${usuario.id})" title="Excluir usuário">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        updatePagination();
+        updateRecordCount();
+    }
+    
+    function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const isMobile = window.innerWidth < 768;
+        const maxVisiblePages = isMobile ? 3 : 5;
+        
+        // Botão anterior
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        const prevText = isMobile ? '‹' : 'Anterior';
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">${prevText}</a>`;
+        pagination.appendChild(prevLi);
+
+        // Calcular range de páginas visíveis
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        // Ajustar se não temos páginas suficientes no final
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        // Primeira página e reticências se necessário
+        if (startPage > 1) {
+            const firstLi = document.createElement('li');
+            firstLi.className = 'page-item';
+            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">1</a>`;
+            pagination.appendChild(firstLi);
+            
+            if (startPage > 2) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(dotsLi);
+            }
+        }
+
+        // Números das páginas visíveis
+        for (let i = startPage; i <= endPage; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Última página e reticências se necessário
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(dotsLi);
+            }
+            
+            const lastLi = document.createElement('li');
+            lastLi.className = 'page-item';
+            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">${totalPages}</a>`;
+            pagination.appendChild(lastLi);
+        }
+
+        // Botão próximo
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        const nextText = isMobile ? '›' : 'Próximo';
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">${nextText}</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function updateRecordCount() {
+        document.getElementById("recordCount").textContent = `${filteredData.length} registros encontrados`;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        }
+    }
+
+
+    
+    function showAddModal() {
+        document.getElementById("modalTitle").innerHTML = '<i class="fas fa-plus me-2"></i>Adicionar Usuário';
+        document.getElementById("usuarioForm").reset();
+        document.getElementById("usuarioId").value = "";
+        
+        // Limpar validações visuais
+        document.getElementById('passwordStrength').style.display = 'none';
+        document.getElementById('passwordMatch').style.display = 'none';
+        
+        new bootstrap.Modal(document.getElementById("usuarioModal")).show();
+    }
+
+    async function saveUsuario() {
+        const form = document.getElementById("usuarioForm");
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        // Validar força da senha
+        const password = document.getElementById("newPassword").value;
+        if (!validatePasswordStrength(password)) {
+            showError("A senha não atende aos critérios de segurança. Verifique os requisitos.");
+            return;
+        }
+        
+        // Validar confirmação de senha
+        if (!validatePasswordMatch()) {
+            showError("As senhas não coincidem. Verifique e tente novamente.");
+            return;
+        }
+
+        const data = {
+            username: document.getElementById("newUsername").value,
+            password: password
+        };
+
+        try {
+            const response = await fetchWithAuth("/api/register", {
+                method: "POST",
+                body: JSON.stringify(data)
+            });
+
+            if (response && response.ok) {
+                showSuccess("Usuário cadastrado com sucesso!");
+                bootstrap.Modal.getInstance(document.getElementById("usuarioModal")).hide();
+                loadUsuarios();
+            } else {
+                const errorData = await response.json();
+                let errorMessage = 'Erro ao salvar usuário';
+                if (errorData.detail) {
+                    if (Array.isArray(errorData.detail)) {
+                        errorMessage += ': ' + errorData.detail.map(err => err.msg || err).join(', ');
+                    } else {
+                        errorMessage += ': ' + errorData.detail;
+                    }
+                }
+                showError(errorMessage);
+            }
+        } catch (error) {
+            console.error("Erro:", error);
+            showError("Erro ao conectar com o servidor");
+        }
+    }
+
+    async function deleteUsuario(id) {
+        if (confirm("Tem certeza que deseja excluir este usuário?")) {
+            try {
+                const response = await fetchWithAuth(`/api/users/${id}`, {
+                    method: "DELETE"
+                });
+
+                if (response && response.ok) {
+                    showSuccess("Usuário excluído com sucesso!");
+                    loadUsuarios();
+                } else {
+                    showError("Erro ao excluir usuário");
+                }
+            } catch (error) {
+                console.error("Erro:", error);
+                showError("Erro ao conectar com o servidor");
+            }
+        }
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,1094 @@
+{% extends "base.html" %}
+
+{% block title %}Contas a Receber - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Contas a Receber</h1>
+            <p class="page-subtitle">Gerencie as receitas e contas a receber da associação</p>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModal()">
+            <i class="fas fa-plus me-2"></i>Adicionar Nova
+        </button>
+    </div>
+</div>
+
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-2">
+            <select class="form-select" id="filterStatus" onchange="aplicarFiltros()">
+                <option value="">Todos Status</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Recebido">Recebido</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterNomeRazao" placeholder="Nome/Razão..." onkeyup="aplicarFiltros()">
+        </div>
+        <div class="col-md-1">
+            <input type="text" class="form-control" id="filterCategoria" placeholder="Categorias..." readonly onclick="abrirModalCategorias()">
+            <input type="hidden" id="categoriasSelecionadas">
+        </div>
+        <div class="col-md-1">
+            <input type="text" class="form-control" id="filterOrigem" placeholder="Origens..." readonly onclick="abrirModalOrigens()">
+            <input type="hidden" id="origensSelecionadas">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterConta" placeholder="Contas..." readonly onclick="abrirModalContas()">
+            <input type="hidden" id="contasSelecionadas">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterPeriodoVencimento" placeholder="Período Vencimento..." readonly onclick="abrirCalendarioPeriodo()">
+            <input type="hidden" id="dataVencimentoInicio">
+            <input type="hidden" id="dataVencimentoFim">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-secondary w-100" onclick="limparFiltros()">
+                <i class="fas fa-times me-2"></i>Limpar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="loading" id="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando contas a receber...</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Origem</th>
+                        <th>Nome/Razão</th>
+                        <th>Categoria</th>
+                        <th>Conta</th>
+                        <th>Emissão</th>
+                        <th>Vencimento</th>
+                        <th>Valor</th>
+                        <th>Recebimento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <span id="recordCount">0 registros encontrados</span>
+                <span id="totalValue" class="ms-3 fw-bold text-success"></span>
+            </div>
+            <div>
+                <nav>
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar -->
+<div class="modal fade" id="contaReceberModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Adicionar Conta a Receber</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contaReceberForm">
+                    <input type="hidden" id="contaReceberId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="origem" class="form-label">Origem *</label>
+                            <select class="form-select" id="origem" required>
+                                <option value="">Selecione a origem</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="conta_id" class="form-label">Conta *</label>
+                            <select class="form-select" id="conta_id" required>
+                                <option value="">Selecione a conta</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="fornecedor_doador_id" class="form-label">Fornecedor/Doador *</label>
+                            <select class="form-select" id="fornecedor_doador_id" required>
+                                <option value="">Selecione um Fornecedor/Doador</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="categoria" class="form-label">Categoria *</label>
+                            <select class="form-select" id="categoria" required>
+                                <option value="">Selecione a categoria</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="status" class="form-label">Status *</label>
+                            <select class="form-select" id="status" required>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Recebido">Recebido</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="valor" class="form-label">Valor *</label>
+                            <input type="number" class="form-control" id="valor" step="0.01" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="data_emissao" class="form-label">Data Emissão *</label>
+                            <input type="date" class="form-control" id="data_emissao" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_vencimento" class="form-label">Data Vencimento *</label>
+                            <input type="date" class="form-control" id="data_vencimento" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="data_recebimento" class="form-label">Data Recebimento</label>
+                            <input type="date" class="form-control" id="data_recebimento">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="recorrente">
+                                <label class="form-check-label" for="recorrente">
+                                    Receita recorrente
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="recorrenciaSection" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="meses_repetir" class="form-label">Repetir por quantos meses?</label>
+                                <input type="number" class="form-control" id="meses_repetir" min="1" max="12">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="observacao" class="form-label">Observação</label>
+                            <textarea class="form-control" id="observacao" rows="3"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarConta()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Variáveis globais
+let contasReceber = [];
+let paginaAtual = 1;
+let registrosPorPagina = 10;
+
+// Função para abrir o modal
+function abrirModal() {
+    document.getElementById('modalTitle').textContent = 'Adicionar Conta a Receber';
+    document.getElementById('contaReceberForm').reset();
+    document.getElementById('contaReceberId').value = '';
+    document.getElementById('data_emissao').value = new Date().toISOString().split('T')[0];
+    document.getElementById('recorrenciaSection').style.display = 'none';
+    
+    carregarDadosDropdowns();
+    
+    const modal = new bootstrap.Modal(document.getElementById('contaReceberModal'));
+    modal.show();
+}
+
+// Função para carregar dados dos dropdowns
+async function carregarDadosDropdowns() {
+    const token = localStorage.getItem('access_token');
+    const headers = { 
+        'Authorization': 'Bearer ' + token, 
+        'Content-Type': 'application/json' 
+    };
+    
+    try {
+        // Carregar Fornecedores/Doadores
+        const fornecedoresResp = await fetch('/api/fornecedores-doadores', { headers });
+        if (fornecedoresResp.ok) {
+            const data = await fornecedoresResp.json();
+            // A API agora retorna dados paginados
+            const fornecedores = data.items || data;
+            const selectFornecedor = document.getElementById('fornecedor_doador_id');
+            selectFornecedor.innerHTML = '<option value="">Selecione um Fornecedor/Doador</option>';
+            fornecedores.forEach(fd => {
+                const option = document.createElement('option');
+                option.value = fd.id;
+                option.textContent = fd.nome_razao;
+                selectFornecedor.appendChild(option);
+            });
+        }
+        
+        // Carregar Contas
+        const contasResp = await fetch('/api/contas', { headers });
+        if (contasResp.ok) {
+            const contas = await contasResp.json();
+            const selectConta = document.getElementById('conta_id');
+            selectConta.innerHTML = '<option value="">Selecione a conta</option>';
+            contas.forEach(conta => {
+                const option = document.createElement('option');
+                option.value = conta.id;
+                option.textContent = conta.nome_conta;
+                selectConta.appendChild(option);
+            });
+        }
+        
+        // Carregar Categorias
+        const categoriasResp = await fetch('/api/categorias-receber', { headers });
+        if (categoriasResp.ok) {
+            const categorias = await categoriasResp.json();
+            const selectCategoria = document.getElementById('categoria');
+            selectCategoria.innerHTML = '<option value="">Selecione a categoria</option>';
+            categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nome;
+                option.textContent = cat.nome;
+                selectCategoria.appendChild(option);
+            });
+        }
+        
+        // Carregar Origens
+        const origensResp = await fetch('/api/origens-receber', { headers });
+        if (origensResp.ok) {
+            const origens = await origensResp.json();
+            const selectOrigens = document.getElementById('origem');
+            selectOrigens.innerHTML = '<option value="">Selecione a origem</option>';
+            origens.forEach(origem => {
+                const option = document.createElement('option');
+                option.value = origem.nome;
+                option.textContent = origem.nome;
+                selectOrigens.appendChild(option);
+            });
+        }
+        
+    } catch (error) {
+        console.error('Erro ao carregar dados dos dropdowns:', error);
+        showError('Erro ao carregar dados dos formulários');
+    }
+}
+
+// Função para salvar conta
+async function salvarConta() {
+    const form = document.getElementById('contaReceberForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const id = document.getElementById('contaReceberId').value;
+    const data = {
+        origem: document.getElementById('origem').value,
+        fornecedor_doador_id: parseInt(document.getElementById('fornecedor_doador_id').value),
+        conta_id: parseInt(document.getElementById('conta_id').value),
+        categoria: document.getElementById('categoria').value,
+        status: document.getElementById('status').value,
+        valor: parseFloat(document.getElementById('valor').value),
+        data_emissao: document.getElementById('data_emissao').value,
+        data_vencimento: document.getElementById('data_vencimento').value,
+        data_recebimento: document.getElementById('data_recebimento').value || null,
+        recorrente: document.getElementById('recorrente').checked,
+        meses_repetir: document.getElementById('recorrente').checked ? parseInt(document.getElementById('meses_repetir').value) || null : null,
+        observacao: document.getElementById('observacao').value
+    };
+
+    try {
+        let response;
+        if (id) {
+            response = await fetchWithAuth(`/api/contas-receber/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+        } else {
+            response = await fetchWithAuth('/api/contas-receber', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+        }
+
+        if (response && response.ok) {
+            showSuccess(id ? 'Conta a receber atualizada com sucesso!' : 'Conta a receber cadastrada com sucesso!');
+            bootstrap.Modal.getInstance(document.getElementById('contaReceberModal')).hide();
+            carregarContasReceber();
+        } else {
+            showError('Erro ao salvar conta a receber');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showError('Erro ao conectar com o servidor');
+    }
+}
+
+// Função para carregar contas a receber
+async function carregarContasReceber() {
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+        // Garantir que os dados dos filtros estejam carregados primeiro
+        if (contasDisponiveis.length === 0) {
+            await carregarDadosFiltros();
+        }
+        
+        const response = await fetchWithAuth('/api/contas-receber');
+        if (response && response.ok) {
+            contasReceber = await response.json();
+            renderizarTabela();
+        } else {
+            showError('Erro ao carregar contas a receber');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showError('Erro ao conectar com o servidor');
+    } finally {
+        document.getElementById('loading').style.display = 'none';
+    }
+}
+
+// Função para renderizar tabela
+function renderizarTabela() {
+    const tableBody = document.getElementById('tableBody');
+    const startIndex = (paginaAtual - 1) * registrosPorPagina;
+    const endIndex = startIndex + registrosPorPagina;
+    const contasPagina = contasReceber.slice(startIndex, endIndex);
+
+    tableBody.innerHTML = '';
+
+    if (contasPagina.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="10" class="text-center">Nenhuma conta encontrada</td></tr>';
+    } else {
+        contasPagina.forEach(conta => {
+            const row = document.createElement('tr');
+            
+            // Determinar o nome da conta
+            let nomeConta = '';
+            if (conta.conta && conta.conta.nome_conta) {
+                nomeConta = conta.conta.nome_conta;
+            } else if (conta.conta_id && contasDisponiveis && contasDisponiveis.length > 0) {
+                // Buscar o nome da conta pelos dados carregados
+                const contaEncontrada = contasDisponiveis.find(c => c.id == conta.conta_id);
+                nomeConta = contaEncontrada ? contaEncontrada.nome_conta : '-';
+            } else {
+                nomeConta = '-';
+            }
+            
+            row.innerHTML = `
+                <td><span class="badge bg-${conta.status === 'Recebido' ? 'success' : 'warning'}">${conta.status}</span></td>
+                <td>${conta.origem}</td>
+                <td>${conta.fornecedor_doador ? conta.fornecedor_doador.nome_razao : ''}</td>
+                <td>${conta.categoria}</td>
+                <td>${nomeConta}</td>
+                <td>${formatarData(conta.data_emissao)}</td>
+                <td>${formatarData(conta.data_vencimento)}${conta.parcela_total > 1 ? ` (${conta.parcela_numero}/${conta.parcela_total})` : ''}</td>
+                <td>R$ ${parseFloat(conta.valor).toFixed(2)}</td>
+                <td>${conta.data_recebimento ? formatarData(conta.data_recebimento) : '-'}</td>
+                <td>
+                    ${conta.status === 'Pendente' ? `
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editarConta(${conta.id})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success me-1" onclick="receberConta(${conta.id})" title="Marcar como Recebida">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-outline-danger" onclick="excluirConta(${conta.id})" title="Excluir">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Atualizar contador
+    document.getElementById('recordCount').textContent = `${contasReceber.length} registros encontrados`;
+    
+    // Calcular total
+    const total = contasReceber.reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+    document.getElementById('totalValue').textContent = `Total: R$ ${total.toFixed(2)}`;
+}
+
+// Função para formatar data
+function formatarData(dataString) {
+    if (!dataString) return '';
+    const data = new Date(dataString + 'T00:00:00');
+    return data.toLocaleDateString('pt-BR');
+}
+
+// Função para editar conta
+async function editarConta(id) {
+    try {
+        console.log('Editando conta ID:', id);
+        
+        // Buscar os dados da conta
+        const response = await fetchWithAuth(`/api/contas-receber/${id}`);
+        if (!response || !response.ok) {
+            console.error('Erro ao buscar conta:', response);
+            showError('Erro ao buscar dados da conta');
+            return;
+        }
+        
+        const conta = await response.json();
+        console.log('Dados da conta:', conta);
+        
+        // Carregar dados dos dropdowns primeiro
+        await carregarDadosDropdowns();
+        
+        // Preencher o modal com os dados da conta
+        document.getElementById('modalTitle').textContent = 'Editar Conta a Receber';
+        document.getElementById('contaReceberId').value = conta.id;
+        document.getElementById('valor').value = conta.valor;
+        document.getElementById('data_emissao').value = conta.data_emissao;
+        document.getElementById('data_vencimento').value = conta.data_vencimento;
+        document.getElementById('data_recebimento').value = conta.data_recebimento || '';
+        document.getElementById('observacao').value = conta.observacao || '';
+        document.getElementById('status').value = conta.status;
+        document.getElementById('recorrente').checked = conta.recorrente || false;
+        document.getElementById('meses_repetir').value = conta.meses_repetir || '';
+        
+        // Aguardar um pouco para os dropdowns carregarem
+        setTimeout(() => {
+            document.getElementById('origem').value = conta.origem;
+            document.getElementById('conta_id').value = conta.conta_id;
+            document.getElementById('fornecedor_doador_id').value = conta.fornecedor_doador_id;
+            document.getElementById('categoria').value = conta.categoria;
+        }, 200);
+        
+        // Mostrar/ocultar seção de recorrência
+        const recorrenciaSection = document.getElementById('recorrenciaSection');
+        if (recorrenciaSection) {
+            recorrenciaSection.style.display = conta.recorrente ? 'block' : 'none';
+        }
+        
+        // Abrir o modal
+        const modalElement = document.getElementById('contaReceberModal');
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            console.log('Modal aberto');
+        } else {
+            console.error('Modal não encontrado');
+            showError('Erro ao abrir modal de edição');
+        }
+        
+    } catch (error) {
+        console.error('Erro na função editarConta:', error);
+        showError('Erro ao carregar dados da conta: ' + error.message);
+    }
+}
+
+// Função para marcar conta como recebida
+async function receberConta(id) {
+    if (confirm('Marcar esta conta como recebida?')) {
+        try {
+            // Primeiro, buscar os dados atuais da conta
+            const getResponse = await fetchWithAuth(`/api/contas-receber/${id}`);
+            if (!getResponse || !getResponse.ok) {
+                showError('Erro ao buscar dados da conta');
+                return;
+            }
+            
+            const contaAtual = await getResponse.json();
+            
+            // Atualizar apenas o status e data de recebimento
+            const dataAtual = new Date().toISOString().split('T')[0];
+            const dadosAtualizados = {
+                ...contaAtual,
+                status: 'Recebido',
+                data_recebimento: dataAtual
+            };
+            
+            const response = await fetchWithAuth(`/api/contas-receber/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(dadosAtualizados)
+            });
+
+            if (response && response.ok) {
+                showSuccess('Conta marcada como recebida com sucesso!');
+                carregarContasReceber();
+            } else {
+                showError('Erro ao marcar conta como recebida');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+}
+
+// Função para excluir conta
+async function excluirConta(id) {
+    if (confirm('Tem certeza que deseja excluir esta conta a receber?')) {
+        try {
+            const response = await fetchWithAuth(`/api/contas-receber/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response && response.ok) {
+                showSuccess('Conta a receber excluída com sucesso!');
+                carregarContasReceber();
+            } else {
+                showError('Erro ao excluir conta a receber');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+}
+
+// Funções de filtro
+let categoriasDisponiveis = [];
+let origensDisponiveis = [];
+let contasDisponiveis = [];
+
+async function carregarDadosFiltros() {
+    const token = localStorage.getItem('access_token');
+    const headers = { 
+        'Authorization': 'Bearer ' + token, 
+        'Content-Type': 'application/json' 
+    };
+    
+    try {
+        // Carregar Categorias para filtro
+        const categoriasResp = await fetch('/api/categorias-receber', { headers });
+        if (categoriasResp.ok) {
+            categoriasDisponiveis = await categoriasResp.json();
+        }
+        
+        // Carregar Origens para filtro
+        const origensResp = await fetch('/api/origens-receber', { headers });
+        if (origensResp.ok) {
+            origensDisponiveis = await origensResp.json();
+        }
+        
+        // Carregar Contas para filtro
+        const contasResp = await fetch('/api/contas', { headers });
+        if (contasResp.ok) {
+            contasDisponiveis = await contasResp.json();
+        }
+        
+    } catch (error) {
+        console.error('Erro ao carregar dados dos filtros:', error);
+    }
+}
+
+function aplicarFiltros() {
+    const status = document.getElementById('filterStatus').value;
+    const nomeRazao = document.getElementById('filterNomeRazao').value.toLowerCase();
+    const categoriasSelecionadas = document.getElementById('categoriasSelecionadas').value;
+    const origensSelecionadas = document.getElementById('origensSelecionadas').value;
+    const contasSelecionadas = document.getElementById('contasSelecionadas').value;
+    const dataInicio = document.getElementById('dataVencimentoInicio').value;
+    const dataFim = document.getElementById('dataVencimentoFim').value;
+    
+    let contasFiltradas = [...contasReceber];
+    
+    // Filtro por status
+    if (status) {
+        contasFiltradas = contasFiltradas.filter(conta => conta.status === status);
+    }
+    
+    // Filtro por nome/razão
+    if (nomeRazao) {
+        contasFiltradas = contasFiltradas.filter(conta => 
+            conta.fornecedor_doador && conta.fornecedor_doador.nome_razao.toLowerCase().includes(nomeRazao)
+        );
+    }
+    
+    // Filtro por categorias (múltiplas)
+    if (categoriasSelecionadas) {
+        const categorias = categoriasSelecionadas.split(',');
+        contasFiltradas = contasFiltradas.filter(conta => 
+            categorias.includes(conta.categoria)
+        );
+    }
+    
+    // Filtro por origens (múltiplas)
+    if (origensSelecionadas) {
+        const origens = origensSelecionadas.split(',');
+        contasFiltradas = contasFiltradas.filter(conta => 
+            origens.includes(conta.origem)
+        );
+    }
+    
+    // Filtro por contas (múltiplas)
+    if (contasSelecionadas) {
+        const contas = contasSelecionadas.split(',');
+        contasFiltradas = contasFiltradas.filter(conta => {
+            // Verificar se a conta tem dados relacionados
+            if (conta.conta && conta.conta.nome_conta) {
+                return contas.includes(conta.conta.nome_conta);
+            }
+            // Se não tem dados relacionados, buscar pelo conta_id
+            if (conta.conta_id && contasDisponiveis && contasDisponiveis.length > 0) {
+                const contaEncontrada = contasDisponiveis.find(c => c.id == conta.conta_id);
+                return contaEncontrada && contas.includes(contaEncontrada.nome_conta);
+            }
+            return false;
+        });
+    }
+    
+    // Filtro por período de vencimento
+    if (dataInicio && dataFim) {
+        contasFiltradas = contasFiltradas.filter(conta => {
+            const dataVencimento = new Date(conta.data_vencimento);
+            const inicio = new Date(dataInicio);
+            const fim = new Date(dataFim);
+            return dataVencimento >= inicio && dataVencimento <= fim;
+        });
+    }
+    
+    // Atualizar a variável global com os dados filtrados
+    const contasOriginais = [...contasReceber];
+    contasReceber = contasFiltradas;
+    
+    // Resetar para primeira página
+    paginaAtual = 1;
+    
+    // Renderizar tabela com dados filtrados
+    renderizarTabela();
+    
+    // Restaurar dados originais
+    contasReceber = contasOriginais;
+}
+
+function limparFiltros() {
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterNomeRazao').value = '';
+    document.getElementById('filterCategoria').value = '';
+    document.getElementById('categoriasSelecionadas').value = '';
+    document.getElementById('filterOrigem').value = '';
+    document.getElementById('origensSelecionadas').value = '';
+    document.getElementById('filterConta').value = '';
+    document.getElementById('contasSelecionadas').value = '';
+    document.getElementById('filterPeriodoVencimento').value = '';
+    document.getElementById('dataVencimentoInicio').value = '';
+    document.getElementById('dataVencimentoFim').value = '';
+    
+    // Recarregar dados sem filtros
+    carregarContasReceber();
+}
+
+function abrirModalCategorias() {
+    // Criar modal para seleção múltipla de categorias
+    const modalHtml = `
+        <div class="modal fade" id="categoriasModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Selecionar Categorias</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodasCategorias()">Selecionar Todas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoCategorias()">Limpar Seleção</button>
+                        </div>
+                        <div id="categoriasCheckboxes">
+                            ${categoriasDisponiveis.map(cat => `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="${cat.nome}" id="cat_${cat.id}">
+                                    <label class="form-check-label" for="cat_${cat.id}">
+                                        ${cat.nome}
+                                    </label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="aplicarCategorias()">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal existente se houver
+    const modalExistente = document.getElementById('categoriasModal');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    // Adicionar modal ao body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Marcar categorias já selecionadas
+    const categoriasSelecionadas = document.getElementById('categoriasSelecionadas').value;
+    if (categoriasSelecionadas) {
+        const categorias = categoriasSelecionadas.split(',');
+        categorias.forEach(categoria => {
+            const checkbox = document.querySelector(`input[value="${categoria}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+    
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('categoriasModal'));
+    modal.show();
+}
+
+function abrirModalOrigens() {
+    // Criar modal para seleção múltipla de origens
+    const modalHtml = `
+        <div class="modal fade" id="origensModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Selecionar Origens</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodasOrigens()">Selecionar Todas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoOrigens()">Limpar Seleção</button>
+                        </div>
+                        <div id="origensCheckboxes">
+                            ${origensDisponiveis.map(origem => `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="${origem.nome}" id="orig_${origem.id}">
+                                    <label class="form-check-label" for="orig_${origem.id}">
+                                        ${origem.nome}
+                                    </label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="aplicarOrigens()">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal existente se houver
+    const modalExistente = document.getElementById('origensModal');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    // Adicionar modal ao body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Marcar origens já selecionadas
+    const origensSelecionadas = document.getElementById('origensSelecionadas').value;
+    if (origensSelecionadas) {
+        const origens = origensSelecionadas.split(',');
+        origens.forEach(origem => {
+            const checkbox = document.querySelector(`input[value="${origem}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+    
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('origensModal'));
+    modal.show();
+}
+
+function selecionarTodasCategorias() {
+    const checkboxes = document.querySelectorAll('#categoriasCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function limparSelecaoCategorias() {
+    const checkboxes = document.querySelectorAll('#categoriasCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+function selecionarTodasOrigens() {
+    const checkboxes = document.querySelectorAll('#origensCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function limparSelecaoOrigens() {
+    const checkboxes = document.querySelectorAll('#origensCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+function aplicarCategorias() {
+    const checkboxes = document.querySelectorAll('#categoriasCheckboxes input[type="checkbox"]:checked');
+    const categoriasSelecionadas = Array.from(checkboxes).map(cb => cb.value);
+    
+    document.getElementById('categoriasSelecionadas').value = categoriasSelecionadas.join(',');
+    
+    if (categoriasSelecionadas.length > 0) {
+        const texto = categoriasSelecionadas.length === 1 
+            ? categoriasSelecionadas[0] 
+            : `${categoriasSelecionadas.length} categorias selecionadas`;
+        document.getElementById('filterCategoria').value = texto;
+    } else {
+        document.getElementById('filterCategoria').value = '';
+    }
+    
+    // Fechar modal
+    bootstrap.Modal.getInstance(document.getElementById('categoriasModal')).hide();
+    
+    // Aplicar filtros
+    aplicarFiltros();
+}
+
+function aplicarOrigens() {
+    const checkboxes = document.querySelectorAll('#origensCheckboxes input[type="checkbox"]:checked');
+    const origensSelecionadas = Array.from(checkboxes).map(cb => cb.value);
+    
+    document.getElementById('origensSelecionadas').value = origensSelecionadas.join(',');
+    
+    if (origensSelecionadas.length > 0) {
+        const texto = origensSelecionadas.length === 1 
+            ? origensSelecionadas[0] 
+            : `${origensSelecionadas.length} origens selecionadas`;
+        document.getElementById('filterOrigem').value = texto;
+    } else {
+        document.getElementById('filterOrigem').value = '';
+    }
+    
+    // Fechar modal
+    bootstrap.Modal.getInstance(document.getElementById('origensModal')).hide();
+    
+    // Aplicar filtros
+    aplicarFiltros();
+}
+
+function abrirModalContas() {
+    // Criar modal para seleção múltipla de contas
+    const modalHtml = `
+        <div class="modal fade" id="contasModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Selecionar Contas</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodasContas()">Selecionar Todas</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoContas()">Limpar Seleção</button>
+                        </div>
+                        <div id="contasCheckboxes">
+                            ${contasDisponiveis.map(conta => `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" value="${conta.nome_conta}" id="conta_${conta.id}">
+                                    <label class="form-check-label" for="conta_${conta.id}">
+                                        ${conta.nome_conta}
+                                    </label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="aplicarContas()">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal existente se houver
+    const modalExistente = document.getElementById('contasModal');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    // Adicionar modal ao body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Marcar contas já selecionadas
+    const contasSelecionadas = document.getElementById('contasSelecionadas').value;
+    if (contasSelecionadas) {
+        const contas = contasSelecionadas.split(',');
+        contas.forEach(conta => {
+            const checkbox = document.querySelector(`input[value="${conta}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+    
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('contasModal'));
+    modal.show();
+}
+
+function selecionarTodasContas() {
+    const checkboxes = document.querySelectorAll('#contasCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function limparSelecaoContas() {
+    const checkboxes = document.querySelectorAll('#contasCheckboxes input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+function aplicarContas() {
+    const checkboxes = document.querySelectorAll('#contasCheckboxes input[type="checkbox"]:checked');
+    const contasSelecionadas = Array.from(checkboxes).map(cb => cb.value);
+    
+    document.getElementById('contasSelecionadas').value = contasSelecionadas.join(',');
+    
+    if (contasSelecionadas.length > 0) {
+        const texto = contasSelecionadas.length === 1 
+            ? contasSelecionadas[0] 
+            : `${contasSelecionadas.length} contas selecionadas`;
+        document.getElementById('filterConta').value = texto;
+    } else {
+        document.getElementById('filterConta').value = '';
+    }
+    
+    // Fechar modal
+    bootstrap.Modal.getInstance(document.getElementById('contasModal')).hide();
+    
+    // Aplicar filtros
+    aplicarFiltros();
+}
+
+function abrirCalendarioPeriodo() {
+    // Criar modal simples para seleção de período
+    const modalHtml = `
+        <div class="modal fade" id="calendarioModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Selecionar Período de Vencimento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dataInicio" class="form-label">Data Início</label>
+                                <input type="date" class="form-control" id="dataInicio">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dataFim" class="form-label">Data Fim</label>
+                                <input type="date" class="form-control" id="dataFim">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="aplicarPeriodo()">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remover modal existente se houver
+    const modalExistente = document.getElementById('calendarioModal');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    // Adicionar modal ao body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Abrir modal
+    const modal = new bootstrap.Modal(document.getElementById('calendarioModal'));
+    modal.show();
+}
+
+function aplicarPeriodo() {
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    
+    if (dataInicio && dataFim) {
+        document.getElementById('dataVencimentoInicio').value = dataInicio;
+        document.getElementById('dataVencimentoFim').value = dataFim;
+        
+        // Corrigir problema de fuso horário adicionando tempo local
+        const dataInicioFormatada = new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR');
+        const dataFimFormatada = new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR');
+        document.getElementById('filterPeriodoVencimento').value = `${dataInicioFormatada} - ${dataFimFormatada}`;
+        
+        // Fechar modal
+        bootstrap.Modal.getInstance(document.getElementById('calendarioModal')).hide();
+        
+        // Aplicar filtros
+        aplicarFiltros();
+    } else {
+        alert('Por favor, selecione ambas as datas.');
+    }
+}
+
+// Controlar exibição da seção de recorrência
+document.addEventListener('DOMContentLoaded', function() {
+    if (isAuthenticated()) {
+        carregarContasReceber();
+        carregarDadosFiltros();
+    }
+    
+    const recorrenteElement = document.getElementById('recorrente');
+    if (recorrenteElement) {
+        recorrenteElement.addEventListener('change', function() {
+            const section = document.getElementById('recorrenciaSection');
+            section.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+    
+    // Preencher data de recebimento automaticamente quando status for "Recebido"
+    const statusElement = document.getElementById('status');
+    if (statusElement) {
+        statusElement.addEventListener('change', function() {
+            const dataRecebimento = document.getElementById('data_recebimento');
+            if (this.value === 'Recebido') {
+                // Preencher com a data atual se não estiver preenchida
+                if (!dataRecebimento.value) {
+                    dataRecebimento.value = new Date().toISOString().split('T')[0];
+                }
+            } else {
+                // Limpar a data de recebimento se status não for "Recebido"
+                dataRecebimento.value = '';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AVCC Coronel Macedo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #E55373;
+            --secondary-color: #0F4587;
+            --light-pink: #f8e8ec;
+            --light-blue: #e6f0ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--secondary-color), #1a5ba8);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            min-height: 500px;
+        }
+
+        .login-left {
+            background: linear-gradient(135deg, var(--primary-color), #f06292);
+            color: white;
+            padding: 60px 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .login-left h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .login-left p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .login-left .icon {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .login-right {
+            padding: 60px 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-form h2 {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-floating {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            border-radius: 15px;
+            border: 2px solid #e9ecef;
+            padding: 15px 20px;
+            height: 60px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(229, 83, 115, 0.25);
+        }
+
+        .form-floating label {
+            padding: 15px 20px;
+            color: #666;
+        }
+
+        .btn-login {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 15px;
+            padding: 15px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .btn-login:hover {
+            background: #d63d5e;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(229, 83, 115, 0.3);
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .register-link a {
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .register-link a:hover {
+            color: var(--primary-color);
+        }
+
+        .alert {
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner-border {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                margin: 20px;
+            }
+
+            .login-left {
+                padding: 40px 30px;
+            }
+
+            .login-right {
+                padding: 40px 30px;
+            }
+
+            .login-left h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .register-section {
+            background: var(--light-blue);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .register-section h3 {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="icon">
+                <img src="static/logo.png" alt="Logo" style="height: 300px;">
+            </div>
+            <p><strong>Associação de Voluntários no Combate ao Câncer de Coronel Macedo</strong></p>
+        </div>
+        
+        <div class="login-right">
+            <div class="login-form">
+                <h2>Entrar no Sistema</h2>
+                
+                <div class="loading">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+
+                <form id="loginForm">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="username" name="username" placeholder="Usuário" required>
+                        <label for="username">Usuário</label>
+                    </div>
+                    
+                    <div class="form-floating">
+                        <input type="password" class="form-control" id="password" name="password" placeholder="Senha" required>
+                        <label for="password">Senha</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-login">
+                        <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                    </button>
+                </form>
+
+                <div class="register-link" style="display: none;">
+                    <p>Não tem uma conta? <a href="#" onclick="showRegisterForm()">Cadastre-se aqui</a></p>
+                </div>
+            </div>
+
+            <div class="register-section" id="registerSection" style="display: none;">
+                <h3>Criar Nova Conta</h3>
+                <p>O cadastro de novos usuários é feito apenas por administradores no painel do sistema.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Verificar se já está logado
+        document.addEventListener("DOMContentLoaded", function() {
+            const token = localStorage.getItem("access_token");
+            if (token) {
+                window.location.href = "/dashboard";
+            }
+        });
+
+        // Mostrar loading
+        function showLoading() {
+            document.querySelector(".loading").style.display = "block";
+        }
+
+        // Esconder loading
+        function hideLoading() {
+            document.querySelector(".loading").style.display = "none";
+        }
+
+        // Mostrar mensagem de erro
+        function showError(message) {
+            const existingAlert = document.querySelector(".alert");
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alert = document.createElement("div");
+            alert.className = "alert alert-danger alert-dismissible fade show";
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector(".login-form").insertBefore(alert, document.querySelector(".login-form form"));
+        }
+
+        // Mostrar mensagem de sucesso
+        function showSuccess(message) {
+            const existingAlert = document.querySelector(".alert");
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alert = document.createElement("div");
+            alert.className = "alert alert-success alert-dismissible fade show";
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector(".login-form").insertBefore(alert, document.querySelector(".login-form form"));
+        }
+
+        // Login
+        document.getElementById("loginForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append("username", document.getElementById("username").value);
+            formData.append("password", document.getElementById("password").value);
+
+            showLoading();
+
+            try {
+                const response = await fetch("/api/token", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem("access_token", data.access_token);
+                    window.location.href = "/dashboard";
+                } else {
+                    showError("Usuário ou senha incorretos");
+                }
+            } catch (error) {
+                showError("Erro ao conectar com o servidor");
+            } finally {
+                hideLoading();
+            }
+        });
+    </script>
+    
+    <!-- Rodapé com versão e marca da Filtech -->
+    <div style="position: fixed; bottom: 10px; left: 20px; z-index: 1000;">
+        <div class="bg-white rounded-pill px-3 py-2 shadow-sm" style="opacity: 0.9;">
+            <small class="text-muted" id="versionInfo">Carregando versão...</small>
+        </div>
+    </div>
+    <div style="position: fixed; bottom: 10px; right: 20px; z-index: 1000;">
+        <div class="d-flex align-items-center bg-white rounded-pill px-3 py-2 shadow-sm" style="opacity: 0.9;">
+            <small class="text-muted me-2">Desenvolvido por</small>
+            <img src="/static/Filtech-Vertical.png" alt="Filtech" style="height: 20px;">
+        </div>
+    </div>
+
+    <script>
+        // Carregar informações de versão
+        async function loadVersionInfo() {
+            try {
+                const response = await fetch('/api/version/simple');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('versionInfo').textContent = data.version;
+                } else {
+                    document.getElementById('versionInfo').textContent = 'Sistema AVCC';
+                }
+            } catch (error) {
+                document.getElementById('versionInfo').textContent = 'Sistema AVCC';
+            }
+        }
+
+        // Carregar versão quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVersionInfo();
+        });
+    </script>
+</body>
+</html>
+

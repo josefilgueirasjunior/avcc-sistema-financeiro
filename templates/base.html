@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema Financeiro - AVCC Coronel Macedo{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #E55373;
+            --secondary-color: #0F4587;
+            --light-pink: #f8e8ec;
+            --light-blue: #e6f0ff;
+            --dark-text: #333;
+            --light-text: #666;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            background: linear-gradient(135deg, var(--secondary-color), #1a5ba8);
+            color: white;
+            min-height: 100vh;
+            width: 250px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sidebar.collapsed .sidebar-header h3 {
+            display: none;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .sidebar-menu li {
+            margin: 5px 0;
+        }
+
+        .sidebar-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            border-radius: 0 25px 25px 0;
+            margin-right: 10px;
+        }
+
+        .sidebar-menu a:hover {
+            background: rgba(255,255,255,0.1);
+            padding-left: 25px;
+        }
+
+        .sidebar-menu a.active {
+            background: var(--primary-color);
+            box-shadow: 0 4px 15px rgba(229, 83, 115, 0.3);
+        }
+
+        .sidebar-menu i {
+            margin-right: 15px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .sidebar-menu span {
+            display: none;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+
+        .top-navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--secondary-color);
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn:hover {
+            background: var(--light-blue);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .content-area {
+            padding: 30px;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            color: var(--secondary-color);
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .page-subtitle {
+            color: var(--light-text);
+            margin: 5px 0 0 0;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: var(--primary-color);
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #d63d5e;
+            border: #d63d5e;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(229, 83, 115, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            border: var(--secondary-color);
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #0d3a73;
+            border: #0d3a73;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(15, 69, 135, 0.3);
+        }
+
+        .table {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            font-weight: 500;
+            padding: 15px;
+        }
+
+        .table tbody td {
+            padding: 15px;
+            border-color: #f0f0f0;
+        }
+
+        .table tbody tr:hover {
+            background: var(--light-pink);
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(229, 83, 115, 0.25);
+        }
+
+        .badge {
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-weight: 500;
+        }
+
+        .badge.bg-success {
+            background: #28a745 !important;
+        }
+
+        .badge.bg-warning {
+            background: #ffc107 !important;
+            color: #000 !important;
+        }
+
+        .badge.bg-danger {
+            background: var(--primary-color) !important;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--primary-color), #f06292);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .stats-card.secondary {
+            background: linear-gradient(135deg, var(--secondary-color), #1976d2);
+        }
+
+        .stats-card h3 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .stats-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        @media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: 100vh;
+        position: fixed;      /* tira do fluxo, não empurra o conteúdo */
+        top: 0;
+        left: 0;
+        transform: translateX(-100%);
+        z-index: 1000;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        min-height: auto;     /* não força 100vh, evita espaço extra no fim */
+    }
+
+    .content-area {
+        padding: 15px;
+    }
+
+    /* corrige o rodapé no mobile */
+    #footer {
+        margin-left: 0 !important;
+    }
+}
+
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner-border {
+            color: var(--primary-color);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-heart"></i> AVCC</h3>
+            <small style="font-size: 0.7rem; opacity: 0.8;">Coronel Macedo</small>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="/dashboard" class="{% if request.url.path == '/dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a></li>
+            <li><a href="/fornecedores-doadores" class="{% if 'fornecedores' in request.url.path %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Fornecedores/Doadores</span>
+            </a></li>
+            <li><a href="/beneficiarios" class="{% if 'beneficiarios' in request.url.path %}active{% endif %}">
+                <i class="fas fa-hands-helping"></i>
+                <span>Beneficiários</span>
+            </a></li>
+            <li><a href="/contas" class="{% if request.url.path == '/contas' %}active{% endif %}">
+                <i class="fas fa-university"></i>
+                <span>Contas</span>
+            </a></li>
+            <li><a href="/contas-pagar" class="{% if 'pagar' in request.url.path %}active{% endif %}">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Contas a Pagar</span>
+            </a></li>
+            <li><a href="/contas-receber" class="{% if 'receber' in request.url.path %}active{% endif %}">
+                <i class="fas fa-hand-holding-usd"></i>
+                <span>Contas a Receber</span>
+            </a></li>
+             <li><a href="/doacoes-avulsas" class="{% if 'doacoes' in request.url.path %}active{% endif %}">
+                <i class="fas fa-gift"></i>
+                <span>Doações Avulsas</span>
+            </a></li>
+            <li><a href="/usuarios" class="{% if 'usuarios' in request.url.path %}active{% endif %}">
+                <i class="fas fa-user-cog"></i>
+                <span>Usuários</span>
+            </a></li>
+            <li><a href="/categorias" class="{% if 'categorias' in request.url.path %}active{% endif %}">
+                <i class="fas fa-tags"></i>
+                <span>Categorias</span>
+            </a></li>
+
+        </ul>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <div class="top-navbar">
+            <button class="toggle-btn" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="user-info">
+                <span id="username">Usuário</span>
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Verificar autenticação
+        async function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token && window.location.pathname !== '/login') {
+                window.location.href = '/login';
+                return false;
+            }
+            
+            // Se tem token, verificar se ainda é válido no servidor
+            if (token && window.location.pathname !== '/login') {
+                try {
+                    const response = await fetch('/api/auth/check', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.status === 401) {
+                        // Token inválido ou sessão expirada
+                        console.log('Sessão invalidada - redirecionando para login');
+                        localStorage.removeItem('access_token');
+                        window.location.href = '/login';
+                        return false;
+                    }
+                } catch (error) {
+                    // Erro de rede, manter token por enquanto
+                    console.warn('Erro ao verificar autenticação:', error);
+                }
+            }
+            
+            return true;
+        }
+
+        // Carregar informações de versão
+        async function loadVersionInfo() {
+            try {
+                const response = await fetch('/api/version/simple');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('versionInfo').textContent = data.version;
+                } else {
+                    document.getElementById('versionInfo').textContent = 'Sistema AVCC';
+                }
+            } catch (error) {
+                document.getElementById('versionInfo').textContent = 'Sistema AVCC';
+            }
+        }
+
+        // Carregar versão quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            loadVersionInfo();
+        });
+
+        // Mostrar modal com informações detalhadas da versão
+        async function showVersionModal() {
+            const modal = new bootstrap.Modal(document.getElementById('versionModal'));
+            const modalBody = document.getElementById('versionModalBody');
+            
+            // Mostrar loading
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+            `;
+            
+            modal.show();
+            
+            try {
+                const response = await fetch('/api/version');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    let changelogHtml = '';
+                    if (data.changelog && data.changelog.features) {
+                        changelogHtml = `
+                            <h6 class="mt-3">Novidades desta versão:</h6>
+                            <ul class="list-unstyled">
+                                ${data.changelog.features.map(feature => `<li><i class="fas fa-plus text-success me-2"></i>${feature}</li>`).join('')}
+                            </ul>
+                        `;
+                        
+                        if (data.changelog.fixes && data.changelog.fixes.length > 0) {
+                            changelogHtml += `
+                                <h6 class="mt-3">Correções:</h6>
+                                <ul class="list-unstyled">
+                                    ${data.changelog.fixes.map(fix => `<li><i class="fas fa-wrench text-warning me-2"></i>${fix}</li>`).join('')}
+                                </ul>
+                            `;
+                        }
+                    }
+                    
+                    modalBody.innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Versão:</strong> ${data.version}<br>
+                                <strong>Build:</strong> ${data.build_number}<br>
+                                <strong>Ambiente:</strong> <span class="badge ${data.environment === 'production' ? 'bg-success' : 'bg-warning'}">${data.environment}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Data de Release:</strong> ${formatDate(data.release_date)}<br>
+                                <strong>Última Verificação:</strong> ${new Date().toLocaleString('pt-BR')}
+                            </div>
+                        </div>
+                        ${changelogHtml}
+                    `;
+                } else {
+                    modalBody.innerHTML = '<div class="alert alert-danger">Erro ao carregar informações da versão.</div>';
+                }
+            } catch (error) {
+                modalBody.innerHTML = '<div class="alert alert-danger">Erro ao conectar com o servidor.</div>';
+            }
+        }
+
+        // Verificar se está autenticado
+        function isAuthenticated() {
+            return localStorage.getItem('access_token') !== null;
+        }
+
+        // Toggle sidebar
+                    function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            if (window.innerWidth <= 768) {
+                // mobile: apenas mostra/esconde via translateX
+                sidebar.classList.toggle('show');
+            } else {
+                // desktop: comportamento colapsar/expandir
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('expanded');
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+
+        // Configurar headers para requisições
+        function getAuthHeaders() {
+            const token = localStorage.getItem('access_token');
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Fazer requisição autenticada
+        async function fetchWithAuth(url, options = {}) {
+            const headers = getAuthHeaders();
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...headers,
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                logout();
+                return null;
+            }
+
+            return response;
+        }
+
+        // Formatar data
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            // Corrigir problema de fuso horário adicionando tempo local
+            const date = new Date(dateString + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Formatar moeda
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        // Mostrar loading
+        function showLoading() {
+            document.querySelector('.loading').style.display = 'block';
+        }
+
+        // Esconder loading
+        function hideLoading() {
+            document.querySelector('.loading').style.display = 'none';
+        }
+
+        // Mostrar mensagem de sucesso
+        function showSuccess(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.content-area').insertBefore(alert, document.querySelector('.content-area').firstChild);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Mostrar mensagem de erro
+        function showError(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.content-area').insertBefore(alert, document.querySelector('.content-area').firstChild);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (await checkAuth()) {
+                // Definir nome do usuário (simplificado)
+                document.getElementById('username').textContent = 'Usuário';
+            }
+        });
+        
+        // Verificar autenticação periodicamente (a cada 10 segundos)
+        setInterval(async function() {
+            if (window.location.pathname !== '/login') {
+                await checkAuth();
+            }
+        }, 10000);
+    </script>
+    {% block extra_js %}{% endblock %}
+
+    <!-- Rodapé com marca da Filtech e versão -->
+    <footer class="text-center py-3 mt-5" style="background-color: #f8f9fa; border-top: 1px solid #dee2e6; margin-left: 250px; transition: margin-left 0.3s ease;" id="footer">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <small class="text-muted me-2" id="versionInfo" style="cursor: pointer;" onclick="showVersionModal()" title="Clique para ver detalhes da versão">Carregando versão...</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <small class="text-muted">Desenvolvido por</small>
+                    <img src="/static/Filtech-Vertical.png" alt="Filtech" class="ms-2" style="height: 30px;">
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal de Informações de Versão -->
+    <div class="modal fade" id="versionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Informações da Versão</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="versionModalBody">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ajustar rodapé quando sidebar é colapsada
+        const toggleSidebarElement = document.getElementById('toggleSidebar');
+        if (toggleSidebarElement) {
+            toggleSidebarElement.addEventListener('click', function() {
+                const footer = document.getElementById('footer');
+                const sidebar = document.getElementById('sidebar');
+
+                setTimeout(() => {
+                    if (sidebar && sidebar.classList.contains('collapsed')) {
+                        footer.style.marginLeft = '70px';
+                    } else {
+                        footer.style.marginLeft = '250px';
+                    }
+                }, 300);
+            });
+        }
+    </script>
+</body>
+</html>
+

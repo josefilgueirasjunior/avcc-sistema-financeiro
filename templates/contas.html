@@ -1,0 +1,690 @@
+{% extends "base.html" %}
+
+{% block title %}Contas - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<style>
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .table-fixed th {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .table-fixed td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .table-fixed .nome-column {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+        position: relative;
+    }
+    
+    .table-fixed .nome-column[title]:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    
+    .truncated-text {
+        border-bottom: 1px dotted #6c757d;
+        cursor: help;
+    }
+    
+    .actions-column {
+        white-space: nowrap;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 2px;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    /* Responsividade para dispositivos móveis */
+    @media (max-width: 768px) {
+        .table-fixed {
+            font-size: 0.8rem;
+        }
+        
+        .table-fixed th {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.2rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.3rem;
+        }
+        
+        .table-responsive {
+            border: none;
+        }
+        
+        .card {
+            margin: 0 -0.5rem;
+            border-radius: 0;
+        }
+        
+        .page-header {
+            margin-bottom: 1rem !important;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+        }
+        
+        .page-subtitle {
+            font-size: 0.9rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .table-fixed th {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.15rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.2rem;
+        }
+        
+        .btn-group-actions .btn {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.75rem;
+        }
+        
+        /* Ajustar larguras para telas muito pequenas */
+        .table-fixed th:nth-child(1) { width: 15% !important; }
+        .table-fixed th:nth-child(2) { width: 40% !important; }
+        .table-fixed th:nth-child(3) { width: 30% !important; }
+        .table-fixed th:nth-child(4) { width: 15% !important; }
+    }
+    
+    @media (max-width: 480px) {
+        .container-fluid {
+            padding: 0.5rem;
+        }
+        
+        .card {
+            margin: 0;
+            border-radius: 0.5rem;
+        }
+        
+        .table-fixed th {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.1rem;
+        }
+        
+        .table-fixed td {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.15rem;
+        }
+        
+        .btn-group-actions .btn {
+            padding: 0.2rem 0.3rem;
+            font-size: 0.7rem;
+        }
+        
+        .btn-group-actions .btn i {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+<div class="page-header mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <h1 class="page-title">Contas</h1>
+            <p class="page-subtitle">Gerencie as contas bancárias e caixa da associação</p>
+        </div>
+        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 flex-shrink-0" onclick="showAddModal()">
+            <i class="fas fa-plus me-1"></i>
+            <span class="d-none d-md-inline">Adicionar Nova</span>
+            <span class="d-md-none">Adicionar</span>
+        </button>
+    </div>
+</div>
+
+
+
+<div class="loading" style="display: none;">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando contas...</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-fixed">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('tipo')" style="width: 15%; padding: 0.75rem 0.5rem;">Tipo <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('nome_conta')" style="width: 45%; padding: 0.75rem 0.5rem;">Nome da Conta <i class="fas fa-sort"></i></th>
+                        <th style="width: 25%; padding: 0.75rem 0.5rem;">Saldo</th>
+                        <th style="width: 15%; padding: 0.75rem 0.5rem;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
+            <div class="order-2 order-md-1">
+                <span id="recordCount" class="text-muted small">0 registros encontrados</span>
+            </div>
+            <div class="order-1 order-md-2">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar -->
+<div class="modal fade" id="contaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: var(--primary-color);">
+                <h5 class="modal-title" id="modalTitle"><i class="fas fa-plus me-2"></i>Adicionar Conta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="contaForm">
+                    <input type="hidden" id="contaId">
+                    
+                    <!-- Seção: Informações da Conta -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-university me-2"></i>Informações da Conta
+                            </h6>
+                        </div>
+                        <div class="col-lg-8 col-md-8 mb-3">
+                            <label for="nome_conta" class="form-label fw-semibold">Nome da Conta *</label>
+                            <input type="text" class="form-control" id="nome_conta" required placeholder="Ex: Banco do Brasil - CC 12345-6">
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="tipo" class="form-label fw-semibold">Tipo *</label>
+                            <select class="form-select" id="tipo" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="Caixa">Caixa</option>
+                                <option value="Banco">Banco</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Observações -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </h6>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="observacao" class="form-label fw-semibold">Observações Gerais</label>
+                            <textarea class="form-control" id="observacao" rows="3" placeholder="Informações adicionais sobre a conta..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn rounded-1" style="border: 1px solid var(--primary-color); color: var(--primary-color);" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn rounded-1 text-white" style="background: var(--primary-color); border: var(--primary-color);" onclick="saveConta()">
+                    <i class="fas fa-save me-1"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let contasData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+    let sortColumn = '';
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+            loadContas();
+        }
+        
+        // Atualizar paginação quando a tela for redimensionada
+        window.addEventListener('resize', function() {
+            updatePagination();
+        });
+    });
+
+    async function loadContas() {
+        showLoading();
+        
+        try {
+            const response = await fetchWithAuth('/api/contas');
+            
+            if (response && response.ok) {
+                contasData = await response.json();
+                filteredData = [...contasData];
+                renderTable();
+            } else {
+                showError('Erro ao carregar contas');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById('tableBody');
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = startIndex + recordsPerPage;
+        const pageData = filteredData.slice(startIndex, endIndex);
+
+        tableBody.innerHTML = '';
+
+        pageData.forEach(conta => {
+            const row = document.createElement('tr');
+            
+            const nomeDisplay = truncateText(conta.nome_conta, 40);
+            const isNameTruncated = conta.nome_conta.length > 40;
+            
+            row.innerHTML = `
+                <td>
+                    <span class="badge ${conta.tipo === 'Banco' ? 'bg-primary' : 'bg-success'} rounded-1" title="${conta.tipo}">
+                        ${conta.tipo === 'Banco' ? 'B' : 'C'}
+                    </span>
+                </td>
+                <td class="nome-column" title="${conta.nome_conta}">
+                    <span class="${isNameTruncated ? 'truncated-text' : ''}">${nomeDisplay}</span>
+                </td>
+                <td>
+                    <span class="fw-bold ${conta.saldo_atual >= 0 ? 'text-success' : 'text-danger'}">
+                        ${formatCurrency(conta.saldo_atual || 0)}
+                    </span>
+                    <small class="text-muted d-block">Saldo atual</small>
+                </td>
+                <td class="actions-column">
+                    <div class="btn-group-actions">
+                        <button class="btn btn-sm btn-outline-info" onclick="showGerenciarSaldoModal(${conta.id}, '${conta.nome_conta}')" title="Gerenciar Saldo">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        updatePagination();
+        updateRecordCount();
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const isMobile = window.innerWidth < 768;
+        const maxVisiblePages = isMobile ? 3 : 5;
+        
+        // Botão anterior
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        const prevText = isMobile ? '‹' : 'Anterior';
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">${prevText}</a>`;
+        pagination.appendChild(prevLi);
+
+        // Calcular range de páginas visíveis
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        // Ajustar se não temos páginas suficientes no final
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        // Primeira página e reticências se necessário
+        if (startPage > 1) {
+            const firstLi = document.createElement('li');
+            firstLi.className = 'page-item';
+            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">1</a>`;
+            pagination.appendChild(firstLi);
+            
+            if (startPage > 2) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(dotsLi);
+            }
+        }
+
+        // Números das páginas visíveis
+        for (let i = startPage; i <= endPage; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Última página e reticências se necessário
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(dotsLi);
+            }
+            
+            const lastLi = document.createElement('li');
+            lastLi.className = 'page-item';
+            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">${totalPages}</a>`;
+            pagination.appendChild(lastLi);
+        }
+
+        // Botão próximo
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        const nextText = isMobile ? '›' : 'Próximo';
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">${nextText}</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function updateRecordCount() {
+        document.getElementById('recordCount').textContent = `${filteredData.length} registros encontrados`;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        }
+    }
+
+
+
+    function sortTable(column) {
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+
+        filteredData.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
+            
+            if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+
+            if (sortDirection === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+
+        renderTable();
+    }
+
+    // Função para truncar texto
+    function truncateText(text, maxLength = 30) {
+        if (!text || text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+    
+
+
+    function showAddModal() {
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus me-2"></i>Adicionar Conta';
+        document.getElementById('contaForm').reset();
+        document.getElementById('contaId').value = '';
+        new bootstrap.Modal(document.getElementById('contaModal')).show();
+    }
+
+    function editConta(id) {
+        const conta = contasData.find(c => c.id === id);
+        if (conta) {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Conta';
+            document.getElementById('contaId').value = conta.id;
+            document.getElementById('nome_conta').value = conta.nome_conta;
+            document.getElementById('tipo').value = conta.tipo;
+            document.getElementById('observacao').value = conta.observacao || '';
+            
+            new bootstrap.Modal(document.getElementById('contaModal')).show();
+        }
+    }
+
+    async function saveConta() {
+        const form = document.getElementById('contaForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const id = document.getElementById('contaId').value;
+        const data = {
+            nome_conta: document.getElementById('nome_conta').value,
+            tipo: document.getElementById('tipo').value,
+            observacao: document.getElementById('observacao').value
+        };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetchWithAuth(`/api/contas/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetchWithAuth('/api/contas', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
+
+            if (response && response.ok) {
+                showSuccess(id ? 'Conta atualizada com sucesso!' : 'Conta cadastrada com sucesso!');
+                bootstrap.Modal.getInstance(document.getElementById('contaModal')).hide();
+                loadContas();
+            } else {
+                showError('Erro ao salvar conta');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+
+    async function deleteConta(id) {
+        if (confirm('Tem certeza que deseja excluir esta conta? Esta ação não pode ser desfeita.')) {
+            try {
+                const response = await fetchWithAuth(`/api/contas/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response && response.ok) {
+                    showSuccess('Conta excluída com sucesso!');
+                    loadContas();
+                } else {
+                    showError('Erro ao excluir conta');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+    }
+</script>
+
+<!-- Modal para Gerenciar Saldo (Adicionar/Retirar) -->
+<div class="modal fade" id="gerenciarSaldoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: var(--primary-color);">
+                <h5 class="modal-title" id="gerenciarSaldoModalTitle"><i class="fas fa-exchange-alt me-2"></i>Gerenciar Saldo da Conta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="gerenciarSaldoForm">
+                    <input type="hidden" id="gerenciarSaldoContaId">
+                    
+                    <!-- Seção: Informações da Conta -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-university me-2"></i>Conta Selecionada
+                            </h6>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Conta: <strong id="gerenciarSaldoContaNome"></strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Operação -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-calculator me-2"></i>Operação Financeira
+                            </h6>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="operacaoTipo" class="form-label fw-semibold">Tipo de Operação *</label>
+                            <select class="form-select" id="operacaoTipo" required>
+                                <option value="">Selecione a operação</option>
+                                <option value="adicionar">Adicionar Saldo</option>
+                                <option value="retirar">Retirar Saldo</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="gerenciarSaldoValor" class="form-label fw-semibold">Valor *</label>
+                            <input type="number" step="0.01" class="form-control" id="gerenciarSaldoValor" required placeholder="0,00">
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Observações -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </h6>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="gerenciarSaldoObservacao" class="form-label fw-semibold">Observação da Operação</label>
+                            <textarea class="form-control" id="gerenciarSaldoObservacao" rows="3" placeholder="Descreva o motivo da operação..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn rounded-1" style="border: 1px solid var(--primary-color); color: var(--primary-color);" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn rounded-1 text-white" style="background: var(--primary-color); border: var(--primary-color);" onclick="processarGerenciarSaldo()">
+                    <i class="fas fa-check me-1"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showGerenciarSaldoModal(id, nome) {
+        document.getElementById("gerenciarSaldoContaId").value = id;
+        document.getElementById("gerenciarSaldoContaNome").textContent = nome;
+        document.getElementById("operacaoTipo").value = ""; // Resetar seleção
+        document.getElementById("gerenciarSaldoValor").value = "";
+        document.getElementById("gerenciarSaldoObservacao").value = "";
+        
+        const modal = new bootstrap.Modal(document.getElementById("gerenciarSaldoModal"));
+        modal.show();
+    }
+
+    async function processarGerenciarSaldo() {
+        const id = document.getElementById("gerenciarSaldoContaId").value;
+        const operacaoTipo = document.getElementById("operacaoTipo").value;
+        const valor = parseFloat(document.getElementById("gerenciarSaldoValor").value);
+        const observacao = document.getElementById("gerenciarSaldoObservacao").value;
+
+        if (!operacaoTipo) {
+            showError("Por favor, selecione o tipo de operação.");
+            return;
+        }
+
+        if (isNaN(valor) || valor <= 0) {
+            showError("Por favor, insira um valor válido e positivo.");
+            return;
+        }
+
+        let endpoint = "";
+        let successMessage = "";
+        let errorMessage = "";
+
+        if (operacaoTipo === "adicionar") {
+            endpoint = `/api/contas/${id}/adicionar_saldo`;
+            successMessage = "Saldo adicionado com sucesso!";
+            errorMessage = "Erro ao adicionar saldo.";
+        } else if (operacaoTipo === "retirar") {
+            endpoint = `/api/contas/${id}/retirar_saldo`;
+            successMessage = "Saldo retirado com sucesso!";
+            errorMessage = "Erro ao retirar saldo.";
+        } else {
+            showError("Tipo de operação inválido.");
+            return;
+        }
+
+        try {
+            const response = await fetchWithAuth(endpoint, {
+                method: "POST",
+                body: JSON.stringify({ valor: valor, observacao: observacao })
+            });
+
+            if (response && response.ok) {
+                showSuccess(successMessage);
+                const modal = bootstrap.Modal.getInstance(document.getElementById("gerenciarSaldoModal"));
+                modal.hide();
+                loadContas();
+            } else {
+                const errorData = await response.json();
+                showError(errorData.detail || errorMessage);
+            }
+        } catch (error) {
+            console.error("Erro:", error);
+            showError("Erro ao conectar com o servidor.");
+        }
+    }
+</script>
+{% endblock %}
+

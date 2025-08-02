@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+
+{% block title %}Fornecedores/Doadores - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<style>
+    .table-fixed {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .table-fixed th {
+        font-size: 0.85rem;
+        white-space: nowrap;
+        padding: 0.5rem 0.25rem;
+    }
+    
+    .table-fixed td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9rem;
+    }
+    
+    .table-fixed .nome-column {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 0;
+        position: relative;
+    }
+    
+    .table-fixed .nome-column[title]:hover {
+        background-color: #f8f9fa;
+        transition: background-color 0.2s ease;
+    }
+    
+    .truncated-text {
+        border-bottom: 1px dotted #6c757d;
+        cursor: help;
+    }
+    
+    .actions-column {
+        white-space: nowrap;
+    }
+    
+    .btn-group-actions {
+        display: flex;
+        gap: 2px;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+<div class="page-header mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+            <h1 class="page-title">Fornecedores e Doadores</h1>
+            <p class="page-subtitle">Gerencie fornecedores e doadores da associação</p>
+        </div>
+        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 flex-shrink-0" onclick="showAddModal()">
+            <i class="fas fa-plus me-1"></i>
+            <span class="d-none d-md-inline">Adicionar Novo</span>
+            <span class="d-md-none">Adicionar</span>
+        </button>
+    </div>
+</div>
+
+<div class="filter-section mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="fw-semibold" style="color: var(--primary-color);">
+            <i class="fas fa-filter me-1"></i>Filtros
+        </small>
+        <button class="btn btn-outline-primary btn-sm rounded-1 py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+            <i class="fas fa-chevron-down" id="filterToggleIcon" style="font-size: 0.7rem;"></i>
+        </button>
+    </div>
+    
+    <div class="collapse" id="filterCollapse">
+        <div class="bg-light rounded px-2 py-1">
+            <div class="row g-1">
+                <div class="col-lg-6 col-md-6">
+                    <select class="form-select form-select-sm" id="filterTipo" onchange="applyFilters()">
+                        <option value="">Todos os Tipos</option>
+                        <option value="Fornecedor">Fornecedor</option>
+                        <option value="Doador">Doador</option>
+                    </select>
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <input type="text" class="form-control form-control-sm" id="filterNome" placeholder="Nome/Razão..." onkeyup="applyFilters()">
+                </div>
+            </div>
+            <div class="text-center mt-1">
+                <button class="btn btn-outline-primary btn-sm rounded-1 px-2 py-0" onclick="clearFilters()">
+                    <i class="fas fa-times me-1" style="font-size: 0.7rem;"></i>Limpar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando fornecedores/doadores...</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-fixed">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('tipo')" style="width: 60px;">Tipo <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('nome_razao')" style="width: auto;">Nome/razão <i class="fas fa-sort"></i></th>
+                        <th style="width: 140px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-2">
+            <div class="order-2 order-md-1">
+                <span id="recordCount" class="text-muted small">0 registros encontrados</span>
+            </div>
+            <div class="order-1 order-md-2">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar -->
+<div class="modal fade" id="fornecedorModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: var(--primary-color);">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>Adicionar Fornecedor/Doador
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="fornecedorForm">
+                    <input type="hidden" id="fornecedorId">
+                    
+                    <!-- Seção: Informações Básicas -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-info-circle me-2"></i>Informações Básicas
+                            </h6>
+                        </div>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="tipo" class="form-label fw-semibold">Tipo *</label>
+                            <select class="form-select" id="tipo" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="Fornecedor">Fornecedor</option>
+                                <option value="Doador">Doador</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-8 col-md-6 mb-3">
+                            <label for="nome_razao" class="form-label fw-semibold">Nome/Razão Social *</label>
+                            <input type="text" class="form-control" id="nome_razao" required placeholder="Digite o nome ou razão social">
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Documentos -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-id-card me-2"></i>Documentos
+                            </h6>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="cpf_cnpj" class="form-label fw-semibold">CPF/CNPJ</label>
+                            <input type="text" class="form-control" id="cpf_cnpj" placeholder="000.000.000-00 ou 00.000.000/0000-00" oninput="formatCpfCnpj(this)">
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="cep" class="form-label fw-semibold">CEP</label>
+                            <input type="text" class="form-control" id="cep" placeholder="00000-000" onblur="buscarCep()" oninput="formatCep(this)">
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Endereço -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-map-marker-alt me-2"></i>Endereço
+                            </h6>
+                        </div>
+                        <div class="col-lg-8 col-md-8 mb-3">
+                            <label for="rua" class="form-label fw-semibold">Rua/Logradouro</label>
+                            <input type="text" class="form-control" id="rua" placeholder="Digite o endereço">
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="numero" class="form-label fw-semibold">Número</label>
+                            <input type="text" class="form-control" id="numero" placeholder="123">
+                        </div>
+                        <div class="col-lg-4 col-md-4 mb-3">
+                            <label for="bairro" class="form-label fw-semibold">Bairro</label>
+                            <input type="text" class="form-control" id="bairro" placeholder="Nome do bairro">
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="cidade" class="form-label fw-semibold">Cidade</label>
+                            <input type="text" class="form-control" id="cidade" placeholder="Nome da cidade">
+                        </div>
+                        <div class="col-lg-2 col-md-2 mb-3">
+                            <label for="estado" class="form-label fw-semibold">UF</label>
+                            <input type="text" class="form-control text-uppercase" id="estado" maxlength="2" placeholder="SP">
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Contatos -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-phone me-2"></i>Contatos
+                            </h6>
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="telefone" class="form-label fw-semibold">Telefone</label>
+                            <input type="text" class="form-control" id="telefone" placeholder="(xx) xxxxx-xxxx" oninput="formatPhone(this)">
+                        </div>
+                        <div class="col-lg-6 col-md-6 mb-3">
+                            <label for="whatsapp" class="form-label fw-semibold">WhatsApp *</label>
+                            <input type="text" class="form-control" id="whatsapp" placeholder="(xx) xxxxx-xxxx" oninput="formatPhone(this)" required>
+                            <div class="form-text text-success">
+                                <i class="fab fa-whatsapp me-1"></i>Campo obrigatório para contato
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção: Observações -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="border-bottom pb-2 mb-3" style="color: var(--primary-color);">
+                                <i class="fas fa-sticky-note me-2"></i>Observações
+                            </h6>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="observacao" class="form-label fw-semibold">Observações Gerais</label>
+                            <textarea class="form-control" id="observacao" rows="3" placeholder="Informações adicionais sobre o fornecedor/doador..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                 <button type="button" class="btn rounded-1" style="border: 1px solid var(--primary-color); color: var(--primary-color);" data-bs-dismiss="modal">
+                      <i class="fas fa-times me-1"></i>Cancelar
+                  </button>
+                  <button type="button" class="btn rounded-1 text-white" style="background: var(--primary-color); border: var(--primary-color);" onclick="saveFornecedor()">
+                      <i class="fas fa-save me-1"></i>Salvar
+                  </button>
+             </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let fornecedoresData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+    let sortColumn = '';
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+            loadFornecedores();
+        }
+        
+        // Atualizar paginação quando a tela for redimensionada
+        window.addEventListener('resize', function() {
+            updatePagination();
+        });
+    });
+
+    function formatPhoneDisplay(phone) {
+        if (!phone) return '';
+        const numbers = phone.replace(/\D/g, '');
+        if (numbers.length === 11) {
+            return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        } else if (numbers.length === 10) {
+            return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+        }
+        return phone;
+    }
+
+    function truncateText(text, maxLength = 30) {
+        if (!text || text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+
+    function formatCpfCnpj(input) {
+        let value = input.value.replace(/\D/g, '');
+        
+        if (value.length <= 11) {
+            // CPF: 000.000.000-00
+            if (value.length > 9) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            } else if (value.length > 6) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+            } else if (value.length > 3) {
+                value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
+            }
+        } else {
+            // CNPJ: 00.000.000/0000-00
+            value = value.substring(0, 14);
+            if (value.length > 12) {
+                value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+            } else if (value.length > 8) {
+                value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})/, '$1.$2.$3/$4');
+            } else if (value.length > 5) {
+                value = value.replace(/(\d{2})(\d{3})(\d{3})/, '$1.$2.$3');
+            } else if (value.length > 2) {
+                value = value.replace(/(\d{2})(\d{3})/, '$1.$2');
+            }
+        }
+        
+        input.value = value;
+    }
+
+    function formatCep(input) {
+        let value = input.value.replace(/\D/g, '');
+        
+        if (value.length > 5) {
+            value = value.substring(0, 8);
+            value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+        }
+        
+        input.value = value;
+    }
+
+    function formatPhone(input) {
+        let value = input.value.replace(/\D/g, '');
+        
+        if (value.length > 11) {
+            value = value.substring(0, 11);
+        }
+        
+        if (value.length >= 11) {
+            value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        } else if (value.length >= 7) {
+            value = value.replace(/(\d{2})(\d{4,5})(\d{0,4})/, '($1) $2-$3');
+        } else if (value.length >= 3) {
+            value = value.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+        } else if (value.length > 0) {
+            value = value.replace(/(\d{0,2})/, '($1');
+        }
+        
+        if (value === '(') {
+            value = '';
+        }
+        
+        input.value = value;
+    }
+
+    // Controle do collapse dos filtros
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterCollapse = document.getElementById('filterCollapse');
+        const filterToggleIcon = document.getElementById('filterToggleIcon');
+        const filterToggleText = filterCollapse.nextElementSibling;
+        
+        filterCollapse.addEventListener('show.bs.collapse', function () {
+            filterToggleIcon.classList.remove('fa-chevron-down');
+            filterToggleIcon.classList.add('fa-chevron-up');
+            const textSpan = filterToggleIcon.parentElement.querySelector('span');
+            if (textSpan) textSpan.textContent = 'Recolher';
+        });
+        
+        filterCollapse.addEventListener('hide.bs.collapse', function () {
+            filterToggleIcon.classList.remove('fa-chevron-up');
+            filterToggleIcon.classList.add('fa-chevron-down');
+            const textSpan = filterToggleIcon.parentElement.querySelector('span');
+            if (textSpan) textSpan.textContent = 'Expandir';
+        });
+    });
+
+    async function loadFornecedores() {
+        showLoading();
+        
+        try {
+            const response = await fetchWithAuth('/api/fornecedores-doadores');
+            
+            if (response && response.ok) {
+                const data = await response.json();
+                // A API agora retorna dados paginados
+                fornecedoresData = data.items || data;
+                filteredData = [...fornecedoresData];
+                renderTable();
+            } else {
+                showError('Erro ao carregar fornecedores/doadores');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById('tableBody');
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = startIndex + recordsPerPage;
+        const pageData = filteredData.slice(startIndex, endIndex);
+
+        tableBody.innerHTML = '';
+
+        pageData.forEach(fornecedor => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="text-center"><span class="badge ${fornecedor.tipo === 'Fornecedor' ? 'bg-primary' : 'bg-success'} rounded-1 px-2 py-1" title="${fornecedor.tipo}">${fornecedor.tipo === 'Fornecedor' ? 'F' : 'D'}</span></td>
+                <td class="nome-column" title="${fornecedor.nome_razao}">
+                    <span class="${fornecedor.nome_razao.length > 30 ? 'truncated-text' : ''}">${truncateText(fornecedor.nome_razao)}</span>
+                </td>
+                <td class="actions-column">
+                    <div class="btn-group-actions">
+                        ${fornecedor.whatsapp ? 
+                            `<a href="https://wa.me/55${fornecedor.whatsapp.replace(/\D/g, '')}" target="_blank" class="btn btn-sm btn-outline-success" title="WhatsApp: ${formatPhoneDisplay(fornecedor.whatsapp)}">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>` 
+                            : ''
+                        }
+                        <button class="btn btn-sm btn-outline-primary" onclick="editFornecedor(${fornecedor.id})" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteFornecedor(${fornecedor.id})" title="Excluir">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        updatePagination();
+        updateRecordCount();
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        const isMobile = window.innerWidth < 768;
+        const maxVisiblePages = isMobile ? 3 : 5;
+        
+        // Botão anterior
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        const prevText = isMobile ? '‹' : 'Anterior';
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">${prevText}</a>`;
+        pagination.appendChild(prevLi);
+
+        // Calcular range de páginas visíveis
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        // Ajustar se não temos páginas suficientes no final
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        // Primeira página e reticências se necessário
+        if (startPage > 1) {
+            const firstLi = document.createElement('li');
+            firstLi.className = 'page-item';
+            firstLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(1)">1</a>`;
+            pagination.appendChild(firstLi);
+            
+            if (startPage > 2) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(dotsLi);
+            }
+        }
+
+        // Números das páginas visíveis
+        for (let i = startPage; i <= endPage; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Última página e reticências se necessário
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                const dotsLi = document.createElement('li');
+                dotsLi.className = 'page-item disabled';
+                dotsLi.innerHTML = `<span class="page-link">...</span>`;
+                pagination.appendChild(dotsLi);
+            }
+            
+            const lastLi = document.createElement('li');
+            lastLi.className = 'page-item';
+            lastLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${totalPages})">${totalPages}</a>`;
+            pagination.appendChild(lastLi);
+        }
+
+        // Botão próximo
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        const nextText = isMobile ? '›' : 'Próximo';
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">${nextText}</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function updateRecordCount() {
+        document.getElementById('recordCount').textContent = `${filteredData.length} registros encontrados`;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        }
+    }
+
+    function applyFilters() {
+        const filterTipo = document.getElementById('filterTipo').value.toLowerCase();
+        const filterNome = document.getElementById('filterNome').value.toLowerCase();
+
+        filteredData = fornecedoresData.filter(fornecedor => {
+            return (
+                (filterTipo === '' || fornecedor.tipo.toLowerCase().includes(filterTipo)) &&
+                (filterNome === '' || fornecedor.nome_razao.toLowerCase().includes(filterNome))
+            );
+        });
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    function clearFilters() {
+        document.getElementById('filterTipo').value = '';
+        document.getElementById('filterNome').value = '';
+        filteredData = [...fornecedoresData];
+        currentPage = 1;
+        renderTable();
+    }
+
+    function sortTable(column) {
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+
+        filteredData.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
+            
+            if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+
+            if (sortDirection === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+
+        renderTable();
+    }
+
+    function showAddModal() {
+        document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Adicionar Fornecedor/Doador';
+        document.getElementById('fornecedorForm').reset();
+        document.getElementById('fornecedorId').value = '';
+        new bootstrap.Modal(document.getElementById('fornecedorModal')).show();
+    }
+
+    function editFornecedor(id) {
+        const fornecedor = fornecedoresData.find(f => f.id === id);
+        if (fornecedor) {
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Editar Fornecedor/Doador';
+            document.getElementById('fornecedorId').value = fornecedor.id;
+            document.getElementById('tipo').value = fornecedor.tipo;
+            document.getElementById('nome_razao').value = fornecedor.nome_razao;
+            document.getElementById('cpf_cnpj').value = fornecedor.cpf_cnpj || '';
+            document.getElementById('cep').value = fornecedor.cep || '';
+            document.getElementById('rua').value = fornecedor.rua || '';
+            document.getElementById('numero').value = fornecedor.numero || '';
+            document.getElementById('bairro').value = fornecedor.bairro || '';
+            document.getElementById('cidade').value = fornecedor.cidade || '';
+            document.getElementById('estado').value = fornecedor.estado || '';
+            document.getElementById('telefone').value = fornecedor.telefone || '';
+            document.getElementById('whatsapp').value = fornecedor.whatsapp || '';
+            document.getElementById('observacao').value = fornecedor.observacao || '';
+            
+            new bootstrap.Modal(document.getElementById('fornecedorModal')).show();
+        }
+    }
+
+    async function saveFornecedor() {
+        const form = document.getElementById('fornecedorForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const id = document.getElementById('fornecedorId').value;
+        const data = {
+            tipo: document.getElementById('tipo').value,
+            nome_razao: document.getElementById('nome_razao').value,
+            cpf_cnpj: document.getElementById('cpf_cnpj').value,
+            cep: document.getElementById('cep').value,
+            rua: document.getElementById('rua').value,
+            numero: document.getElementById('numero').value,
+            bairro: document.getElementById('bairro').value,
+            cidade: document.getElementById('cidade').value,
+            estado: document.getElementById('estado').value,
+            telefone: document.getElementById('telefone').value,
+            whatsapp: document.getElementById('whatsapp').value,
+            observacao: document.getElementById('observacao').value
+        };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetchWithAuth(`/api/fornecedores-doadores/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetchWithAuth('/api/fornecedores-doadores', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
+
+            if (response && response.ok) {
+                showSuccess(id ? 'Fornecedor/Doador atualizado com sucesso!' : 'Fornecedor/Doador cadastrado com sucesso!');
+                bootstrap.Modal.getInstance(document.getElementById('fornecedorModal')).hide();
+                loadFornecedores();
+            } else {
+                showError('Erro ao salvar fornecedor/doador');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+
+    async function deleteFornecedor(id) {
+        if (confirm('Tem certeza que deseja excluir este fornecedor/doador?')) {
+            try {
+                const response = await fetchWithAuth(`/api/fornecedores-doadores/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response && response.ok) {
+                    showSuccess('Fornecedor/Doador excluído com sucesso!');
+                    loadFornecedores();
+                } else {
+                    showError('Erro ao excluir fornecedor/doador');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+    }
+
+    async function buscarCep() {
+        const cep = document.getElementById('cep').value.replace(/\D/g, '');
+        if (cep.length === 8) {
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await response.json();
+                
+                if (!data.erro) {
+                    document.getElementById('rua').value = data.logradouro;
+                    document.getElementById('bairro').value = data.bairro;
+                    document.getElementById('cidade').value = data.localidade;
+                    document.getElementById('estado').value = data.uf;
+                }
+            } catch (error) {
+                console.log('Erro ao buscar CEP:', error);
+            }
+        }
+    }
+</script>
+{% endblock %}
+

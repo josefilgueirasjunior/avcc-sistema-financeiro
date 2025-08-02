@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+
+{% block title %}Doações Avulsas - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Doações Avulsas</h1>
+            <p class="page-subtitle">Gerencie as doações pontuais recebidas pela associação</p>
+        </div>
+        <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus me-2"></i>Adicionar Nova
+        </button>
+    </div>
+</div>
+
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-2">
+            <select class="form-select" id="filterRecebido" onchange="applyFilters()">
+                <option value="">Todos Status</option>
+                <option value="true">Recebido</option>
+                <option value="false">Pendente</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterNome" placeholder="Nome doador..." onkeyup="applyFilters()">
+        </div>
+        <div class="col-md-2">
+            <input type="date" class="form-control" id="filterDataInicio" onchange="applyFilters()" placeholder="Data início">
+        </div>
+        <div class="col-md-2">
+            <input type="date" class="form-control" id="filterDataFim" onchange="applyFilters()" placeholder="Data fim">
+        </div>
+        <div class="col-md-2">
+            <input type="number" class="form-control" id="filterValorMin" placeholder="Valor mín..." onkeyup="applyFilters()">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-secondary w-100" onclick="clearFilters()">
+                <i class="fas fa-times me-2"></i>Limpar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando doações avulsas...</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 id="totalRecebido">R$ 0,00</h4>
+                        <p class="mb-0">Total Recebido</p>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 id="totalPendente">R$ 0,00</h4>
+                        <p class="mb-0">Total Pendente</p>
+                    </div>
+                    <i class="fas fa-clock fa-2x" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card" style="background: var(--primary-color); color: white;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 id="totalGeral">R$ 0,00</h4>
+                        <p class="mb-0">Total Geral</p>
+                    </div>
+                    <i class="fas fa-heart fa-2x" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('recebido')">Status <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('nome_doador')">Nome do Doador <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('whatsapp')">WhatsApp <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('valor')">Valor <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('data')">Data <i class="fas fa-sort"></i></th>
+                        <th>Conta</th>
+                        <th onclick="sortTable('observacao')">Observação <i class="fas fa-sort"></i></th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <span id="recordCount">0 registros encontrados</span>
+                <span id="totalValue" class="ms-3 fw-bold text-success"></span>
+            </div>
+            <div>
+                <nav>
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar -->
+<div class="modal fade" id="doacaoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Adicionar Doação Avulsa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="doacaoForm">
+                    <input type="hidden" id="doacaoId">
+
+                    <div class="mb-3">
+                        <label for="nome_doador" class="form-label">Nome do Doador *</label>
+                        <input type="text" class="form-control" id="nome_doador" required placeholder="Nome completo do doador">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="whatsapp" class="form-label">WhatsApp</label>
+                            <input type="text" class="form-control" id="whatsapp" placeholder="(11) 99999-9999">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="valor" class="form-label">Valor *</label>
+                            <input type="number" class="form-control" id="valor" step="0.01" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="conta_id" class="form-label">Conta *</label>
+                            <select class="form-select" id="conta_id" required>
+                                <option value="">Selecione a conta</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="data" class="form-label">Data *</label>
+                            <input type="date" class="form-control" id="data" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="recebido">
+                            <label class="form-check-label" for="recebido">
+                                Marcar como recebido
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação</label>
+                        <textarea class="form-control" id="observacao" rows="3" placeholder="Informações adicionais sobre a doação"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveDoacao()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let doacoesData = [];
+    let filteredData = [];
+    let contasData = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+    let sortColumn = '';
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+            loadInitialData();
+        }
+
+        // Definir data como hoje por padrão
+        document.getElementById('data').value = new Date().toISOString().split('T')[0];
+    });
+
+    async function loadInitialData() {
+        showLoading();
+        try {
+            await Promise.all([
+                loadDoacoes(),
+                loadContas()
+            ]);
+            // Renderizar apenas após todos os dados estarem carregados
+            renderTable();
+            updateSummaryCards();
+        } catch (error) {
+            console.error('Erro ao carregar dados iniciais:', error);
+            showError('Erro ao carregar dados');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function loadDoacoes() {
+        try {
+            const response = await fetchWithAuth('/api/doacoes-avulsas');
+
+            if (response && response.ok) {
+                doacoesData = await response.json();
+                filteredData = [...doacoesData];
+                // Não renderizar aqui - será renderizado em loadInitialData
+            } else {
+                showError('Erro ao carregar doações avulsas');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+
+    async function loadContas() {
+        try {
+            const response = await fetchWithAuth('/api/contas');
+            if (response && response.ok) {
+                contasData = await response.json();
+                populateContasSelect();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar contas:', error);
+        }
+    }
+
+    function populateContasSelect() {
+        const select = document.getElementById('conta_id');
+        select.innerHTML = '<option value="">Selecione a conta</option>';
+
+        contasData.forEach(conta => {
+            const option = document.createElement('option');
+            option.value = conta.id;
+            option.textContent = conta.nome_conta;
+            select.appendChild(option);
+        });
+    }
+
+    function updateSummaryCards() {
+        const totalRecebido = doacoesData
+            .filter(d => d.recebido)
+            .reduce((sum, d) => sum + d.valor, 0);
+
+        const totalPendente = doacoesData
+            .filter(d => !d.recebido)
+            .reduce((sum, d) => sum + d.valor, 0);
+
+        const totalGeral = totalRecebido + totalPendente;
+
+        document.getElementById('totalRecebido').textContent = formatCurrency(totalRecebido);
+        document.getElementById('totalPendente').textContent = formatCurrency(totalPendente);
+        document.getElementById('totalGeral').textContent = formatCurrency(totalGeral);
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById('tableBody');
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = startIndex + recordsPerPage;
+        const pageData = filteredData.slice(startIndex, endIndex);
+
+        tableBody.innerHTML = '';
+
+        pageData.forEach(doacao => {
+            const conta = contasData.find(c => c.id === doacao.conta_id);
+            const row = document.createElement('tr');
+
+            row.innerHTML = `
+                <td>
+                    <span class="badge ${doacao.recebido ? 'bg-success' : 'bg-warning text-dark'}">
+                        <i class="fas ${doacao.recebido ? 'fa-check' : 'fa-clock'} me-1"></i>
+                        ${doacao.recebido ? 'Recebido' : 'Pendente'}
+                    </span>
+                </td>
+                <td>
+                    <strong>${doacao.nome_doador}</strong>
+                </td>
+                <td>${doacao.whatsapp || '-'}</td>
+                <td class="fw-bold text-success">${formatCurrency(doacao.valor)}</td>
+                <td>${formatDate(doacao.data)}</td>
+                <td>
+                    <small class="text-muted">${conta ? conta.nome_conta : 'N/A'}</small>
+                </td>
+                <td>
+                    <small>${doacao.observacao || '-'}</small>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editDoacao(${doacao.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDoacao(${doacao.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    ${!doacao.recebido ? `
+                        <button class="btn btn-sm btn-outline-success" onclick="marcarComoRecebido(${doacao.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        updatePagination();
+        updateRecordCount();
+        updateTotalValue();
+    }
+
+    function updateTotalValue() {
+        const total = filteredData.reduce((sum, doacao) => sum + doacao.valor, 0);
+        document.getElementById('totalValue').textContent = `Total Filtrado: ${formatCurrency(total)}`;
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        const pagination = document.getElementById('pagination');
+
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        // Botão anterior
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Anterior</a>`;
+        pagination.appendChild(prevLi);
+
+        // Números das páginas
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Botão próximo
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Próximo</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function updateRecordCount() {
+        document.getElementById('recordCount').textContent = `${filteredData.length} registros encontrados`;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        }
+    }
+
+    function applyFilters() {
+        const filterRecebido = document.getElementById('filterRecebido').value;
+        const filterNome = document.getElementById('filterNome').value.toLowerCase();
+        const filterDataInicio = document.getElementById('filterDataInicio').value;
+        const filterDataFim = document.getElementById('filterDataFim').value;
+        const filterValorMin = parseFloat(document.getElementById('filterValorMin').value) || 0;
+
+        filteredData = doacoesData.filter(doacao => {
+            const recebidoMatch = filterRecebido === '' ||
+                (filterRecebido === 'true' && doacao.recebido) ||
+                (filterRecebido === 'false' && !doacao.recebido);
+
+            const nomeMatch = filterNome === '' || doacao.nome_doador.toLowerCase().includes(filterNome);
+
+            const dataMatch = (!filterDataInicio || doacao.data >= filterDataInicio) &&
+                             (!filterDataFim || doacao.data <= filterDataFim);
+
+            const valorMatch = doacao.valor >= filterValorMin;
+
+            return recebidoMatch && nomeMatch && dataMatch && valorMatch;
+        });
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    function clearFilters() {
+        document.getElementById('filterRecebido').value = '';
+        document.getElementById('filterNome').value = '';
+        document.getElementById('filterDataInicio').value = '';
+        document.getElementById('filterDataFim').value = '';
+        document.getElementById('filterValorMin').value = '';
+        filteredData = [...doacoesData];
+        currentPage = 1;
+        renderTable();
+    }
+
+    function sortTable(column) {
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+
+        filteredData.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
+
+            if (column === 'valor') {
+                aVal = parseFloat(aVal);
+                bVal = parseFloat(bVal);
+            } else if (column === 'data') {
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
+            } else if (column === 'recebido') {
+                aVal = aVal ? 1 : 0;
+                bVal = bVal ? 1 : 0;
+            } else if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+
+            if (sortDirection === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+
+        renderTable();
+    }
+
+    function showAddModal() {
+        document.getElementById('modalTitle').textContent = 'Adicionar Doação Avulsa';
+        document.getElementById('doacaoForm').reset();
+        document.getElementById('doacaoId').value = '';
+        document.getElementById('data').value = new Date().toISOString().split('T')[0];
+        new bootstrap.Modal(document.getElementById('doacaoModal')).show();
+    }
+
+    function editDoacao(id) {
+        const doacao = doacoesData.find(d => d.id === id);
+        if (doacao) {
+            document.getElementById('modalTitle').textContent = 'Editar Doação Avulsa';
+            document.getElementById('doacaoId').value = doacao.id;
+            document.getElementById('nome_doador').value = doacao.nome_doador;
+            document.getElementById('whatsapp').value = doacao.whatsapp || '';
+            document.getElementById('valor').value = doacao.valor;
+            document.getElementById('conta_id').value = doacao.conta_id;
+            document.getElementById('data').value = doacao.data;
+            document.getElementById('recebido').checked = doacao.recebido;
+            document.getElementById('observacao').value = doacao.observacao || '';
+
+            new bootstrap.Modal(document.getElementById('doacaoModal')).show();
+        }
+    }
+
+    async function saveDoacao() {
+        const form = document.getElementById('doacaoForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const id = document.getElementById('doacaoId').value;
+        const data = {
+            nome_doador: document.getElementById('nome_doador').value,
+            whatsapp: document.getElementById('whatsapp').value,
+            valor: parseFloat(document.getElementById('valor').value),
+            conta_id: parseInt(document.getElementById('conta_id').value),
+            data: document.getElementById('data').value,
+            recebido: document.getElementById('recebido').checked,
+            observacao: document.getElementById('observacao').value
+        };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetchWithAuth(`/api/doacoes-avulsas/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetchWithAuth('/api/doacoes-avulsas', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
+
+            if (response && response.ok) {
+                showSuccess(id ? 'Doação atualizada com sucesso!' : 'Doação cadastrada com sucesso!');
+                bootstrap.Modal.getInstance(document.getElementById('doacaoModal')).hide();
+                // Recarrega e re-renderiza a grid imediatamente
+                await loadDoacoes();
+                renderTable();
+                updateSummaryCards();
+            } else {
+                showError('Erro ao salvar doação');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+
+    async function deleteDoacao(id) {
+        if (confirm('Tem certeza que deseja excluir esta doação?')) {
+            try {
+                const response = await fetchWithAuth(`/api/doacoes-avulsas/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response && response.ok) {
+                    showSuccess('Doação excluída com sucesso!');
+                    // Recarrega e re-renderiza a grid imediatamente
+                    await loadDoacoes();
+                    renderTable();
+                    updateSummaryCards();
+                } else {
+                    showError('Erro ao excluir doação');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+    }
+
+    async function marcarComoRecebido(id) {
+        const doacao = doacoesData.find(d => d.id === id);
+        if (doacao) {
+            doacao.recebido = true;
+
+            try {
+                const response = await fetchWithAuth(`/api/doacoes-avulsas/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(doacao)
+                });
+
+                if (response && response.ok) {
+                    showSuccess('Doação marcada como recebida!');
+                    // Recarrega e re-renderiza a grid imediatamente
+                    await loadDoacoes();
+                    renderTable();
+                    updateSummaryCards();
+                } else {
+                    showError('Erro ao marcar doação como recebida');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+    }
+</script>
+{% endblock %}

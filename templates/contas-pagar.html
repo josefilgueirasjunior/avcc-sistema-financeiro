@@ -1,0 +1,1141 @@
+{% extends "base.html" %}
+
+{% block title %}Contas a Pagar - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Contas a Pagar</h1>
+            <p class="page-subtitle">Gerencie as despesas e contas a pagar da associação</p>
+        </div>
+        <button class="btn btn-primary" onclick="showAddModal()">
+            <i class="fas fa-plus me-2"></i>Adicionar Nova
+        </button>
+    </div>
+</div>
+
+<div class="filter-section">
+    <div class="row">
+        <div class="col-md-2">
+            <select class="form-select" id="filterStatus" onchange="applyFilters()">
+                <option value="">Todos Status</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Pago">Pago</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterNomeRazao" placeholder="Nome/Razão..." onkeyup="applyFilters()">
+        </div>
+        <div class="col-md-1">
+            <input type="text" class="form-control" id="filterCategoria" placeholder="Categorias..." readonly onclick="abrirModalCategorias()">
+            <input type="hidden" id="categoriasSelecionadas">
+        </div>
+        <div class="col-md-1">
+            <input type="text" class="form-control" id="filterBeneficiario" placeholder="Beneficiários..." readonly onclick="abrirModalBeneficiarios()">
+            <input type="hidden" id="beneficiariosSelecionados">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterConta" placeholder="Contas..." readonly onclick="abrirModalContas()">
+            <input type="hidden" id="contasSelecionadas">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control" id="filterPeriodoVencimento" placeholder="Período Vencimento..." readonly onclick="abrirCalendarioPeriodo()">
+            <input type="hidden" id="dataVencimentoInicio">
+            <input type="hidden" id="dataVencimentoFim">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-secondary w-100" onclick="clearFilters()">
+                <i class="fas fa-times me-2"></i>Limpar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando contas a pagar...</p>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('status')">Status <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('fornecedor')">Fornecedor <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('data_vencimento')">Vencimento <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('valor')">Valor <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('data_pagamento')">Data Pagamento <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('beneficiario')">Beneficiário <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('conta')">Banco/Conta <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('categoria')">Categoria <i class="fas fa-sort"></i></th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                <span id="recordCount">0 registros encontrados</span>
+                <span id="totalValue" class="ms-3 fw-bold text-primary"></span>
+            </div>
+            <div>
+                <nav>
+                    <ul class="pagination" id="pagination">
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Adicionar/Editar -->
+<div class="modal fade" id="contaPagarModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Adicionar Conta a Pagar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="contaPagarForm">
+                    <input type="hidden" id="contaPagarId">
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="fornecedor_id" class="form-label">Fornecedor *</label>
+                            <select class="form-select" id="fornecedor_id" required>
+                                <option value="">Selecione o fornecedor</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="beneficiario_id" class="form-label">Beneficiário (opcional)</label>
+                            <select class="form-select" id="beneficiario_id">
+                                <option value="">Nenhum beneficiário</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="conta_id" class="form-label">Conta *</label>
+                            <select class="form-select" id="conta_id" required>
+                                <option value="">Selecione a conta</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="categoria" class="form-label">Categoria *</label>
+                            <select class="form-select" id="categoria" required>
+                                <option value="">Selecione a categoria</option>
+                                <!-- Categorias normais -->
+                                <optgroup label="Categorias Operacionais">
+                                    <option value="Combustível">Combustível</option>
+                                    <option value="Manutenção">Manutenção</option>
+                                    <option value="Material de Escritório">Material de Escritório</option>
+                                    <option value="Telefone/Internet">Telefone/Internet</option>
+                                    <option value="Energia Elétrica">Energia Elétrica</option>
+                                    <option value="Água">Água</option>
+                                    <option value="Aluguel">Aluguel</option>
+                                    <option value="Seguros">Seguros</option>
+                                    <option value="Taxas/Impostos">Taxas/Impostos</option>
+                                    <option value="Outros">Outros</option>
+                                </optgroup>
+                                <!-- Categorias de ajuda -->
+                                <optgroup label="Categorias de Ajuda">
+                                    <option value="Alimentação">Alimentação</option>
+                                    <option value="Medicamento">Medicamento</option>
+                                    <option value="Transporte">Transporte</option>
+                                    <option value="Vestuário">Vestuário</option>
+                                    <option value="Material Escolar">Material Escolar</option>
+                                    <option value="Consulta Médica">Consulta Médica</option>
+                                    <option value="Exames">Exames</option>
+                                    <option value="Moradia">Moradia</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="status" class="form-label">Status *</label>
+                            <select class="form-select" id="status" required onchange="controlarDataPagamento()">
+                                <option value="Pendente">Pendente</option>
+                                <option value="Pago">Pago</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="valor" class="form-label">Valor *</label>
+                            <input type="number" class="form-control" id="valor" step="0.01" min="0" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="data_emissao" class="form-label">Data Emissão *</label>
+                            <input type="date" class="form-control" id="data_emissao" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="data_vencimento" class="form-label">Data Vencimento *</label>
+                            <input type="date" class="form-control" id="data_vencimento" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="data_pagamento" class="form-label">Data Pagamento</label>
+                            <input type="date" class="form-control" id="data_pagamento">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_pagamento" class="form-label">Tipo de Pagamento</label>
+                            <select class="form-select" id="tipo_pagamento">
+                                <option value="">Selecione o tipo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="recorrente">
+                                <label class="form-check-label" for="recorrente">
+                                    Conta recorrente
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="recorrenciaSection" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="meses_repetir" class="form-label">Repetir por quantos meses?</label>
+                            <input type="number" class="form-control" id="meses_repetir" min="1" max="12">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação</label>
+                        <textarea class="form-control" id="observacao" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveContaPagar()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let contasPagarData = [];
+    let filteredData = [];
+    let fornecedoresData = [];
+    let beneficiariosData = [];
+    let contasData = [];
+    let currentPage = 1;
+    const recordsPerPage = 10;
+    let sortColumn = '';
+    let sortDirection = 'asc';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+            loadInitialData();
+        }
+        
+        // Controlar exibição da seção de recorrência
+        const recorrenteElement = document.getElementById('recorrente');
+        if (recorrenteElement) {
+            recorrenteElement.addEventListener('change', function() {
+                const section = document.getElementById('recorrenciaSection');
+                section.style.display = this.checked ? 'block' : 'none';
+            });
+        }
+        
+        // Definir data de emissão como hoje por padrão
+        const dataEmissaoElement = document.getElementById('data_emissao');
+        if (dataEmissaoElement) {
+            dataEmissaoElement.value = new Date().toISOString().split('T')[0];
+        }
+    });
+
+    async function loadInitialData() {
+        await Promise.all([
+            loadContasPagar(),
+            loadFornecedores(),
+            loadBeneficiarios(),
+            loadContas()
+        ]);
+        
+        // Carregar dados específicos para os filtros
+        await carregarDadosFiltros();
+        
+        // Renderizar tabela apenas após todos os dados estarem carregados
+        renderTable();
+    }
+
+    async function loadBeneficiarios() {
+        try {
+            const response = await fetchWithAuth('/api/beneficiarios');
+            if (response && response.ok) {
+                beneficiariosData = await response.json();
+                const select = document.getElementById('beneficiario_id');
+                
+                select.innerHTML = '<option value="">Selecione o beneficiário</option>';
+                
+                beneficiariosData.forEach(beneficiario => {
+                    const option = document.createElement('option');
+                    option.value = beneficiario.id;
+                    option.textContent = beneficiario.nome;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar beneficiários:', error);
+        }
+    }
+
+    async function loadCategoriasPagar() {
+        try {
+            const response = await fetchWithAuth('/api/categorias-pagar');
+            if (response && response.ok) {
+                const categorias = await response.json();
+                const select = document.getElementById('categoria');
+                
+                // Limpar opções existentes (exceto a primeira)
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                // Adicionar categorias
+                categorias.forEach(categoria => {
+                    const option = document.createElement('option');
+                    option.value = categoria.nome;
+                    option.textContent = categoria.nome;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar categorias a pagar:', error);
+        }
+    }
+
+    async function loadTiposPagamento() {
+        try {
+            const response = await fetchWithAuth('/api/tipos-pagamento');
+            if (response && response.ok) {
+                const tipos = await response.json();
+                const select = document.getElementById('tipo_pagamento');
+                
+                // Limpar opções existentes (exceto a primeira)
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                // Adicionar tipos
+                tipos.forEach(tipo => {
+                    const option = document.createElement('option');
+                    option.value = tipo.nome;
+                    option.textContent = tipo.nome;
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Erro ao carregar tipos de pagamento:', error);
+        }
+    }
+
+    async function loadContasPagar() {
+        showLoading();
+        
+        try {
+            const response = await fetchWithAuth('/api/contas-pagar');
+            
+            if (response && response.ok) {
+                contasPagarData = await response.json();
+                filteredData = [...contasPagarData];
+                // Não renderizar aqui, será renderizado após todos os dados carregarem
+            } else {
+                showError('Erro ao carregar contas a pagar');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    async function loadFornecedores() {
+        try {
+            const response = await fetchWithAuth('/api/fornecedores-doadores');
+            if (response && response.ok) {
+                const responseData = await response.json();
+                // A API agora retorna dados paginados
+                const data = responseData.items || responseData;
+                fornecedoresData = data.filter(item => item.tipo === 'Fornecedor');
+                populateFornecedoresSelect();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar fornecedores:', error);
+        }
+    }
+
+    async function loadContas() {
+        try {
+            const response = await fetchWithAuth('/api/contas');
+            if (response && response.ok) {
+                contasData = await response.json();
+                populateContasSelect();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar contas:', error);
+        }
+    }
+
+    function populateFornecedoresSelect() {
+        const select = document.getElementById('fornecedor_id');
+        select.innerHTML = '<option value="">Selecione o fornecedor</option>';
+        
+        fornecedoresData.forEach(fornecedor => {
+            const option = document.createElement('option');
+            option.value = fornecedor.id;
+            option.textContent = fornecedor.nome_razao;
+            select.appendChild(option);
+        });
+    }
+
+    function populateContasSelect() {
+        const select = document.getElementById('conta_id');
+        select.innerHTML = '<option value="">Selecione a conta</option>';
+        
+        contasData.forEach(conta => {
+            const option = document.createElement('option');
+            option.value = conta.id;
+            option.textContent = conta.nome_conta;
+            select.appendChild(option);
+        });
+    }
+
+    function renderTable() {
+        const tableBody = document.getElementById('tableBody');
+        const startIndex = (currentPage - 1) * recordsPerPage;
+        const endIndex = startIndex + recordsPerPage;
+        const pageData = filteredData.slice(startIndex, endIndex);
+
+        tableBody.innerHTML = '';
+
+        pageData.forEach(conta => {
+            const fornecedor = fornecedoresData.find(f => f.id === conta.fornecedor_id);
+            const beneficiario = beneficiariosData.find(b => b.id === conta.beneficiario_id);
+            const contaBanco = contasData.find(c => c.id === conta.conta_id);
+            const row = document.createElement('tr');
+            
+            // Determinar classe da linha baseada no status e vencimento
+            let rowClass = '';
+            const hoje = new Date().toISOString().split('T')[0];
+            if (conta.status === 'Pendente' && conta.data_vencimento < hoje) {
+                rowClass = 'table-danger';
+            } else if (conta.status === 'Pendente' && conta.data_vencimento === hoje) {
+                rowClass = 'table-warning';
+            }
+            
+            row.className = rowClass;
+            row.innerHTML = `
+                <td>
+                    <span class="badge ${conta.status === 'Pago' ? 'bg-success' : 'bg-warning text-dark'}">
+                        ${conta.status}
+                    </span>
+                </td>
+                <td>${fornecedor ? fornecedor.nome_razao : 'N/A'}</td>
+                <td>${formatDate(conta.data_vencimento)}${conta.parcela_total > 1 ? ` (${conta.parcela_numero}/${conta.parcela_total})` : ''}</td>
+                <td class="fw-bold">${formatCurrency(conta.valor)}</td>
+                <td>${conta.data_pagamento ? formatDate(conta.data_pagamento) : '-'}</td>
+                <td>${beneficiario ? beneficiario.nome : '-'}</td>
+                <td>${contaBanco ? contaBanco.nome_conta : 'N/A'}</td>
+                <td>${conta.categoria || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editContaPagar(${conta.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteContaPagar(${conta.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    ${conta.status === 'Pendente' ? `
+                        <button class="btn btn-sm btn-outline-success" onclick="marcarComoPago(${conta.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        updatePagination();
+        updateRecordCount();
+        updateTotalValue();
+    }
+
+    function updateTotalValue() {
+        const total = filteredData.reduce((sum, conta) => sum + conta.valor, 0);
+        document.getElementById('totalValue').textContent = `Total: ${formatCurrency(total)}`;
+    }
+
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        const pagination = document.getElementById('pagination');
+        
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        // Botão anterior
+        const prevLi = document.createElement('li');
+        prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+        prevLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Anterior</a>`;
+        pagination.appendChild(prevLi);
+
+        // Números das páginas
+        for (let i = 1; i <= totalPages; i++) {
+            const li = document.createElement('li');
+            li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            li.innerHTML = `<a class="page-link" href="#" onclick="changePage(${i})">${i}</a>`;
+            pagination.appendChild(li);
+        }
+
+        // Botão próximo
+        const nextLi = document.createElement('li');
+        nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextLi.innerHTML = `<a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Próximo</a>`;
+        pagination.appendChild(nextLi);
+    }
+
+    function updateRecordCount() {
+        document.getElementById('recordCount').textContent = `${filteredData.length} registros encontrados`;
+    }
+
+    function changePage(page) {
+        const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        }
+    }
+
+    // Variáveis globais para filtros
+    let categoriasDisponiveis = [];
+    let beneficiariosDisponiveis = [];
+    let contasDisponiveis = [];
+
+    async function carregarDadosFiltros() {
+        const token = localStorage.getItem('access_token');
+        const headers = { 
+            'Authorization': 'Bearer ' + token, 
+            'Content-Type': 'application/json' 
+        };
+        
+        try {
+            // Carregar Categorias para filtro
+            const categoriasResp = await fetch('/api/categorias-pagar', { headers });
+            if (categoriasResp.ok) {
+                categoriasDisponiveis = await categoriasResp.json();
+            }
+            
+            // Usar beneficiários já carregados
+            beneficiariosDisponiveis = [...beneficiariosData];
+            
+            // Usar contas já carregadas
+            contasDisponiveis = [...contasData];
+            
+        } catch (error) {
+            console.error('Erro ao carregar dados dos filtros:', error);
+        }
+    }
+
+    function applyFilters() {
+        const status = document.getElementById('filterStatus').value;
+        const nomeRazao = document.getElementById('filterNomeRazao').value.toLowerCase();
+        const categoriasSelecionadas = document.getElementById('categoriasSelecionadas').value;
+        const beneficiariosSelecionados = document.getElementById('beneficiariosSelecionados').value;
+        const contasSelecionadas = document.getElementById('contasSelecionadas').value;
+        const dataInicio = document.getElementById('dataVencimentoInicio').value;
+        const dataFim = document.getElementById('dataVencimentoFim').value;
+        
+        filteredData = contasPagarData.filter(conta => {
+            const fornecedor = fornecedoresData.find(f => f.id === conta.fornecedor_id);
+            const beneficiario = beneficiariosData.find(b => b.id === conta.beneficiario_id);
+            const contaBanco = contasData.find(c => c.id === conta.conta_id);
+            
+            // Filtro por status
+            if (status && conta.status !== status) {
+                return false;
+            }
+            
+            // Filtro por nome/razão (fornecedor)
+            if (nomeRazao && (!fornecedor || !fornecedor.nome_razao.toLowerCase().includes(nomeRazao))) {
+                return false;
+            }
+            
+            // Filtro por categorias (múltiplas)
+            if (categoriasSelecionadas) {
+                const categorias = categoriasSelecionadas.split(',');
+                if (!conta.categoria || !categorias.includes(conta.categoria)) {
+                    return false;
+                }
+            }
+            
+            // Filtro por beneficiários (múltiplos)
+            if (beneficiariosSelecionados) {
+                const beneficiarios = beneficiariosSelecionados.split(',');
+                if (!beneficiario || !beneficiarios.includes(beneficiario.nome)) {
+                    return false;
+                }
+            }
+            
+            // Filtro por contas (múltiplas)
+            if (contasSelecionadas) {
+                const contas = contasSelecionadas.split(',');
+                if (!contaBanco || !contas.includes(contaBanco.nome_conta)) {
+                    return false;
+                }
+            }
+            
+            // Filtro por período de vencimento
+            if (dataInicio && dataFim) {
+                const dataVencimento = new Date(conta.data_vencimento);
+                const inicio = new Date(dataInicio);
+                const fim = new Date(dataFim);
+                if (dataVencimento < inicio || dataVencimento > fim) {
+                    return false;
+                }
+            }
+            
+            return true;
+        });
+
+        currentPage = 1;
+        renderTable();
+    }
+
+    function clearFilters() {
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterNomeRazao').value = '';
+        document.getElementById('filterCategoria').value = '';
+        document.getElementById('categoriasSelecionadas').value = '';
+        document.getElementById('filterBeneficiario').value = '';
+        document.getElementById('beneficiariosSelecionados').value = '';
+        document.getElementById('filterConta').value = '';
+        document.getElementById('contasSelecionadas').value = '';
+        document.getElementById('filterPeriodoVencimento').value = '';
+        document.getElementById('dataVencimentoInicio').value = '';
+        document.getElementById('dataVencimentoFim').value = '';
+        
+        filteredData = [...contasPagarData];
+        currentPage = 1;
+        renderTable();
+    }
+
+    function sortTable(column) {
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+
+        filteredData.sort((a, b) => {
+            let aVal = a[column] || '';
+            let bVal = b[column] || '';
+            
+            if (column === 'valor') {
+                aVal = parseFloat(aVal);
+                bVal = parseFloat(bVal);
+            } else if (column.includes('data')) {
+                aVal = new Date(aVal);
+                bVal = new Date(bVal);
+            } else if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+
+            if (sortDirection === 'asc') {
+                return aVal > bVal ? 1 : -1;
+            } else {
+                return aVal < bVal ? 1 : -1;
+            }
+        });
+
+        renderTable();
+    }
+
+    function showAddModal() {
+        document.getElementById('modalTitle').textContent = 'Adicionar Conta a Pagar';
+        document.getElementById('contaPagarForm').reset();
+        document.getElementById('contaPagarId').value = '';
+        document.getElementById('data_emissao').value = new Date().toISOString().split('T')[0];
+        document.getElementById('recorrenciaSection').style.display = 'none';
+        
+        // Recarregar categorias e tipos
+        loadCategoriasPagar();
+        loadTiposPagamento();
+        
+        new bootstrap.Modal(document.getElementById('contaPagarModal')).show();
+    }
+
+    function editContaPagar(id) {
+        const conta = contasPagarData.find(c => c.id === id);
+        if (conta) {
+            document.getElementById('modalTitle').textContent = 'Editar Conta a Pagar';
+            document.getElementById('contaPagarId').value = conta.id;
+            document.getElementById('fornecedor_id').value = conta.fornecedor_id;
+            document.getElementById('beneficiario_id').value = conta.beneficiario_id || '';
+            document.getElementById('conta_id').value = conta.conta_id;
+            document.getElementById('status').value = conta.status;
+            document.getElementById('valor').value = conta.valor;
+            document.getElementById('data_emissao').value = conta.data_emissao;
+            document.getElementById('data_vencimento').value = conta.data_vencimento;
+            document.getElementById('data_pagamento').value = conta.data_pagamento || '';
+            document.getElementById('recorrente').checked = conta.recorrente || false;
+            document.getElementById('meses_repetir').value = conta.meses_repetir || '';
+            document.getElementById('observacao').value = conta.observacao || '';
+            
+            document.getElementById('recorrenciaSection').style.display = conta.recorrente ? 'block' : 'none';
+            
+            // Carregar categorias e tipos, depois definir valores selecionados
+            Promise.all([loadCategoriasPagar(), loadTiposPagamento()]).then(() => {
+                document.getElementById('categoria').value = conta.categoria;
+                document.getElementById('tipo_pagamento').value = conta.tipo_pagamento || '';
+            });
+            
+            new bootstrap.Modal(document.getElementById('contaPagarModal')).show();
+        }
+    }
+
+    async function saveContaPagar() {
+        const form = document.getElementById('contaPagarForm');
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const id = document.getElementById('contaPagarId').value;
+        
+        const data = {
+            fornecedor_id: parseInt(document.getElementById('fornecedor_id').value),
+            beneficiario_id: document.getElementById('beneficiario_id').value ? parseInt(document.getElementById('beneficiario_id').value) : null,
+            categoria: document.getElementById('categoria').value,
+            conta_id: parseInt(document.getElementById('conta_id').value),
+            status: document.getElementById('status').value,
+            valor: parseFloat(document.getElementById('valor').value),
+            data_emissao: document.getElementById('data_emissao').value,
+            data_vencimento: document.getElementById('data_vencimento').value,
+            data_pagamento: document.getElementById('data_pagamento').value || null,
+            tipo_pagamento: document.getElementById('tipo_pagamento').value,
+            recorrente: document.getElementById('recorrente').checked,
+            meses_repetir: document.getElementById('recorrente').checked ? parseInt(document.getElementById('meses_repetir').value) || null : null,
+            observacao: document.getElementById('observacao').value
+        };
+
+        try {
+            let response;
+            if (id) {
+                response = await fetchWithAuth(`/api/contas-pagar/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
+            } else {
+                response = await fetchWithAuth('/api/contas-pagar', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
+            }
+
+            if (response && response.ok) {
+                showSuccess(id ? 'Conta a pagar atualizada com sucesso!' : 'Conta a pagar cadastrada com sucesso!');
+                bootstrap.Modal.getInstance(document.getElementById('contaPagarModal')).hide();
+                await loadInitialData(); // Recarregar todos os dados
+            } else {
+                showError('Erro ao salvar conta a pagar');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao conectar com o servidor');
+        }
+    }
+
+    async function deleteContaPagar(id) {
+        if (confirm('Tem certeza que deseja excluir esta conta a pagar?')) {
+            try {
+                const response = await fetchWithAuth(`/api/contas-pagar/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response && response.ok) {
+                    showSuccess('Conta a pagar excluída com sucesso!');
+                    await loadInitialData(); // Recarregar todos os dados
+                } else {
+                    showError('Erro ao excluir conta a pagar');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+    }
+
+    async function marcarComoPago(id) {
+        const conta = contasPagarData.find(c => c.id === id);
+        if (conta) {
+            conta.status = 'Pago';
+            conta.data_pagamento = new Date().toISOString().split('T')[0];
+            
+            try {
+                const response = await fetchWithAuth(`/api/contas-pagar/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(conta)
+                });
+
+                if (response && response.ok) {
+                    showSuccess('Conta marcada como paga!');
+                    await loadInitialData(); // Recarregar todos os dados
+                } else {
+                    showError('Erro ao marcar conta como paga');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+    }
+
+    // Função para controlar o preenchimento da data de pagamento
+    function controlarDataPagamento() {
+        const status = document.getElementById('status').value;
+        const dataPagamentoField = document.getElementById('data_pagamento');
+        
+        if (status === 'Pago') {
+            // Se não há data preenchida, preencher com a data atual
+            if (!dataPagamentoField.value) {
+                const hoje = new Date().toISOString().split('T')[0];
+                dataPagamentoField.value = hoje;
+            }
+        } else if (status === 'Pendente') {
+            // Se mudou para Pendente, limpar a data de pagamento
+            dataPagamentoField.value = '';
+        }
+    }
+
+    // Funções para modais de filtros
+    function abrirModalCategorias() {
+        const modalHtml = `
+            <div class="modal fade" id="categoriasModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Selecionar Categorias</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodasCategorias()">Selecionar Todas</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoCategorias()">Limpar Seleção</button>
+                            </div>
+                            <div id="categoriasCheckboxes">
+                                ${categoriasDisponiveis.map(categoria => `
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="${categoria.nome}" id="categoria_${categoria.id}">
+                                        <label class="form-check-label" for="categoria_${categoria.id}">
+                                            ${categoria.nome}
+                                        </label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="aplicarCategorias()">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const modalExistente = document.getElementById('categoriasModal');
+        if (modalExistente) modalExistente.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        const categoriasSelecionadas = document.getElementById('categoriasSelecionadas').value;
+        if (categoriasSelecionadas) {
+            const categorias = categoriasSelecionadas.split(',');
+            categorias.forEach(categoria => {
+                const checkbox = document.querySelector(`input[value="${categoria}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('categoriasModal'));
+        modal.show();
+    }
+
+    function selecionarTodasCategorias() {
+        const checkboxes = document.querySelectorAll('#categoriasCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => checkbox.checked = true);
+    }
+
+    function limparSelecaoCategorias() {
+        const checkboxes = document.querySelectorAll('#categoriasCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    function aplicarCategorias() {
+        const checkboxes = document.querySelectorAll('#categoriasCheckboxes input[type="checkbox"]:checked');
+        const categoriasSelecionadas = Array.from(checkboxes).map(cb => cb.value);
+        
+        document.getElementById('categoriasSelecionadas').value = categoriasSelecionadas.join(',');
+        
+        if (categoriasSelecionadas.length > 0) {
+            const texto = categoriasSelecionadas.length === 1 
+                ? categoriasSelecionadas[0] 
+                : `${categoriasSelecionadas.length} categorias selecionadas`;
+            document.getElementById('filterCategoria').value = texto;
+        } else {
+            document.getElementById('filterCategoria').value = '';
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('categoriasModal')).hide();
+        applyFilters();
+    }
+
+    function abrirModalBeneficiarios() {
+        const modalHtml = `
+            <div class="modal fade" id="beneficiariosModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Selecionar Beneficiários</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodosBeneficiarios()">Selecionar Todos</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoBeneficiarios()">Limpar Seleção</button>
+                            </div>
+                            <div id="beneficiariosCheckboxes">
+                                ${beneficiariosDisponiveis.map(beneficiario => `
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="${beneficiario.nome}" id="beneficiario_${beneficiario.id}">
+                                        <label class="form-check-label" for="beneficiario_${beneficiario.id}">
+                                            ${beneficiario.nome}
+                                        </label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="aplicarBeneficiarios()">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const modalExistente = document.getElementById('beneficiariosModal');
+        if (modalExistente) modalExistente.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        const beneficiariosSelecionados = document.getElementById('beneficiariosSelecionados').value;
+        if (beneficiariosSelecionados) {
+            const beneficiarios = beneficiariosSelecionados.split(',');
+            beneficiarios.forEach(beneficiario => {
+                const checkbox = document.querySelector(`input[value="${beneficiario}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('beneficiariosModal'));
+        modal.show();
+    }
+
+    function selecionarTodosBeneficiarios() {
+        const checkboxes = document.querySelectorAll('#beneficiariosCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => checkbox.checked = true);
+    }
+
+    function limparSelecaoBeneficiarios() {
+        const checkboxes = document.querySelectorAll('#beneficiariosCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    function aplicarBeneficiarios() {
+        const checkboxes = document.querySelectorAll('#beneficiariosCheckboxes input[type="checkbox"]:checked');
+        const beneficiariosSelecionados = Array.from(checkboxes).map(cb => cb.value);
+        
+        document.getElementById('beneficiariosSelecionados').value = beneficiariosSelecionados.join(',');
+        
+        if (beneficiariosSelecionados.length > 0) {
+            const texto = beneficiariosSelecionados.length === 1 
+                ? beneficiariosSelecionados[0] 
+                : `${beneficiariosSelecionados.length} beneficiários selecionados`;
+            document.getElementById('filterBeneficiario').value = texto;
+        } else {
+            document.getElementById('filterBeneficiario').value = '';
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('beneficiariosModal')).hide();
+        applyFilters();
+    }
+
+    function abrirModalContas() {
+        const modalHtml = `
+            <div class="modal fade" id="contasModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Selecionar Contas</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="selecionarTodasContas()">Selecionar Todas</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="limparSelecaoContas()">Limpar Seleção</button>
+                            </div>
+                            <div id="contasCheckboxes">
+                                ${contasDisponiveis.map(conta => `
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="${conta.nome_conta}" id="conta_${conta.id}">
+                                        <label class="form-check-label" for="conta_${conta.id}">
+                                            ${conta.nome_conta}
+                                        </label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="aplicarContas()">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const modalExistente = document.getElementById('contasModal');
+        if (modalExistente) modalExistente.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        const contasSelecionadas = document.getElementById('contasSelecionadas').value;
+        if (contasSelecionadas) {
+            const contas = contasSelecionadas.split(',');
+            contas.forEach(conta => {
+                const checkbox = document.querySelector(`input[value="${conta}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('contasModal'));
+        modal.show();
+    }
+
+    function selecionarTodasContas() {
+        const checkboxes = document.querySelectorAll('#contasCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => checkbox.checked = true);
+    }
+
+    function limparSelecaoContas() {
+        const checkboxes = document.querySelectorAll('#contasCheckboxes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    function aplicarContas() {
+        const checkboxes = document.querySelectorAll('#contasCheckboxes input[type="checkbox"]:checked');
+        const contasSelecionadas = Array.from(checkboxes).map(cb => cb.value);
+        
+        document.getElementById('contasSelecionadas').value = contasSelecionadas.join(',');
+        
+        if (contasSelecionadas.length > 0) {
+            const texto = contasSelecionadas.length === 1 
+                ? contasSelecionadas[0] 
+                : `${contasSelecionadas.length} contas selecionadas`;
+            document.getElementById('filterConta').value = texto;
+        } else {
+            document.getElementById('filterConta').value = '';
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('contasModal')).hide();
+        applyFilters();
+    }
+
+    function abrirCalendarioPeriodo() {
+        const modalHtml = `
+            <div class="modal fade" id="calendarioModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Selecionar Período de Vencimento</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="dataInicio" class="form-label">Data Início</label>
+                                    <input type="date" class="form-control" id="dataInicio">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="dataFim" class="form-label">Data Fim</label>
+                                    <input type="date" class="form-control" id="dataFim">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" onclick="aplicarPeriodo()">Aplicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const modalExistente = document.getElementById('calendarioModal');
+        if (modalExistente) modalExistente.remove();
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        const dataInicio = document.getElementById('dataVencimentoInicio').value;
+        const dataFim = document.getElementById('dataVencimentoFim').value;
+        
+        if (dataInicio) document.getElementById('dataInicio').value = dataInicio;
+        if (dataFim) document.getElementById('dataFim').value = dataFim;
+        
+        const modal = new bootstrap.Modal(document.getElementById('calendarioModal'));
+        modal.show();
+    }
+
+    function aplicarPeriodo() {
+        const dataInicio = document.getElementById('dataInicio').value;
+        const dataFim = document.getElementById('dataFim').value;
+        
+        document.getElementById('dataVencimentoInicio').value = dataInicio;
+        document.getElementById('dataVencimentoFim').value = dataFim;
+        
+        if (dataInicio && dataFim) {
+            // Corrigir problema de fuso horário adicionando tempo local
+            const inicio = new Date(dataInicio + 'T00:00:00').toLocaleDateString('pt-BR');
+            const fim = new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR');
+            document.getElementById('filterPeriodoVencimento').value = `${inicio} - ${fim}`;
+        } else {
+            document.getElementById('filterPeriodoVencimento').value = '';
+        }
+        
+        bootstrap.Modal.getInstance(document.getElementById('calendarioModal')).hide();
+        applyFilters();
+    }
+
+
+</script>
+{% endblock %}
+

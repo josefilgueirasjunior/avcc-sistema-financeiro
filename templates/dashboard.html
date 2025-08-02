@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema Financeiro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Transparência financeira da associação</p>
+</div>
+
+<div class="loading">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+    <p>Carregando dados do dashboard...</p>
+</div>
+
+<div id="dashboardContent" style="display: none;">
+    <!-- Navegação Mensal -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <button class="btn btn-outline-primary me-3" onclick="navegarMes(-1)">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </button>
+                        <h3 class="mb-0 mx-4" id="mesAtual">Janeiro 2025</h3>
+                        <button class="btn btn-outline-primary ms-3" onclick="navegarMes(1)">
+                            Próximo <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Navegue pelos meses para ver o histórico financeiro</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards Principais -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 id="totalRecebido">R$ 0,00</h3>
+                        <p>Recebido no Mês</p>
+                    </div>
+                    <i class="fas fa-arrow-down fa-2x text-success" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card secondary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 id="totalAReceber">R$ 0,00</h3>
+                        <p>A Receber no Mês</p>
+                    </div>
+                    <i class="fas fa-clock fa-2x" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 id="totalPago">R$ 0,00</h3>
+                        <p>Pago no Mês</p>
+                    </div>
+                    <i class="fas fa-arrow-up fa-2x text-danger" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stats-card secondary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 id="totalAPagar">R$ 0,00</h3>
+                        <p>A Pagar no Mês</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-2x" style="opacity: 0.7;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo e Saldos -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header" style="background: var(--primary-color); color: white;">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Resumo do Mês</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h4 class="text-success">Entradas</h4>
+                            <h3 id="totalEntradas" class="text-success">R$ 0,00</h3>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-danger">Saídas</h4>
+                            <h3 id="totalSaidas" class="text-danger">R$ 0,00</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header" style="background: var(--secondary-color); color: white;">
+                    <h5 class="mb-0"><i class="fas fa-university me-2"></i>Saldos por Conta</h5>
+                </div>
+                <div class="card-body">
+                    <div id="saldosContas">
+                        <p class="text-muted">Carregando saldos...</p>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong>Total Consolidado:</strong>
+                        <strong id="saldoTotal" class="text-primary">R$ 0,00</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transparência - Receitas -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Receitas por Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <div id="receitasPorCategoria">
+                        <p class="text-muted">Carregando dados...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-light text-dark">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Espaço para Futuras Análises</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-chart-bar fa-3x mb-3" style="opacity: 0.3;"></i>
+                        <p>Área reservada para implementação de novas funcionalidades de análise financeira.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transparência - Despesas -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Despesas por Categoria</h5>
+                </div>
+                <div class="card-body">
+                    <div id="despesasPorCategoria">
+                        <p class="text-muted">Carregando dados...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>Gastos por Beneficiário</h5>
+                </div>
+                <div class="card-body">
+                    <div id="gastosPorBeneficiario">
+                        <p class="text-muted">Carregando dados...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let mesAtualSelecionado = new Date();
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+            atualizarMesDisplay();
+            carregarDadosDashboard();
+        }
+    });
+
+    function navegarMes(direcao) {
+        mesAtualSelecionado.setMonth(mesAtualSelecionado.getMonth() + direcao);
+        atualizarMesDisplay();
+        carregarDadosDashboard();
+    }
+
+    function atualizarMesDisplay() {
+        const meses = [
+            'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        
+        const mesNome = meses[mesAtualSelecionado.getMonth()];
+        const ano = mesAtualSelecionado.getFullYear();
+        
+        document.getElementById('mesAtual').textContent = `${mesNome} ${ano}`;
+    }
+
+    async function carregarDadosDashboard() {
+        showLoading();
+        
+        try {
+            const ano = mesAtualSelecionado.getFullYear();
+            const mes = mesAtualSelecionado.getMonth() + 1; // JavaScript usa 0-11, precisamos 1-12
+            
+            // Carregar dados do mês selecionado
+            await Promise.all([
+                carregarResumoMensal(ano, mes),
+                carregarSaldosContas(),
+                carregarReceitasPorCategoria(ano, mes),
+                carregarDespesasPorCategoria(ano, mes),
+                carregarGastosPorBeneficiario(ano, mes)
+            ]);
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            showError('Erro ao carregar dados do dashboard');
+        } finally {
+            hideLoading();
+            document.getElementById('dashboardContent').style.display = 'block';
+        }
+    }
+
+    async function carregarResumoMensal(ano, mes) {
+        try {
+            // Buscar contas a receber
+            const responseReceber = await fetchWithAuth('/api/contas-receber');
+            const contasReceber = responseReceber ? await responseReceber.json() : [];
+            
+            // Buscar contas a pagar
+            const responsePagar = await fetchWithAuth('/api/contas-pagar');
+            const contasPagar = responsePagar ? await responsePagar.json() : [];
+            
+            // Buscar doações avulsas
+            const responseDoacoes = await fetchWithAuth('/api/doacoes-avulsas');
+            const doacoes = responseDoacoes ? await responseDoacoes.json() : [];
+            
+            // Filtrar por mês/ano
+            const contasReceberMes = contasReceber.filter(conta => {
+                const data = new Date(conta.data_vencimento + 'T00:00:00');
+                return data.getFullYear() === ano && data.getMonth() + 1 === mes;
+            });
+            
+            const contasPagarMes = contasPagar.filter(conta => {
+                const data = new Date(conta.data_vencimento + 'T00:00:00');
+                return data.getFullYear() === ano && data.getMonth() + 1 === mes;
+            });
+            
+            const doacoesMes = doacoes.filter(doacao => {
+                const data = new Date(doacao.data + 'T00:00:00');
+                return data.getFullYear() === ano && data.getMonth() + 1 === mes;
+            });
+            
+            // Calcular totais
+            const totalRecebido = contasReceberMes
+                .filter(conta => conta.status === 'Recebido')
+                .reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+                
+            const totalAReceber = contasReceberMes
+                .filter(conta => conta.status === 'Pendente')
+                .reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+                
+            const totalPago = contasPagarMes
+                .filter(conta => conta.status === 'Pago')
+                .reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+                
+            const totalAPagar = contasPagarMes
+                .filter(conta => conta.status === 'Pendente')
+                .reduce((sum, conta) => sum + parseFloat(conta.valor), 0);
+                
+            const totalDoacoes = doacoesMes
+                .filter(doacao => doacao.recebido)
+                .reduce((sum, doacao) => sum + parseFloat(doacao.valor), 0);
+            
+            // Atualizar interface
+            document.getElementById('totalRecebido').textContent = formatCurrency(totalRecebido);
+            document.getElementById('totalAReceber').textContent = formatCurrency(totalAReceber);
+            document.getElementById('totalPago').textContent = formatCurrency(totalPago);
+            document.getElementById('totalAPagar').textContent = formatCurrency(totalAPagar);
+            
+            const totalEntradas = totalRecebido + totalDoacoes;
+            const totalSaidas = totalPago;
+            
+            document.getElementById('totalEntradas').textContent = formatCurrency(totalEntradas);
+            document.getElementById('totalSaidas').textContent = formatCurrency(totalSaidas);
+            
+        } catch (error) {
+            console.error('Erro ao carregar resumo mensal:', error);
+        }
+    }
+
+    async function carregarSaldosContas() {
+        try {
+            const response = await fetchWithAuth('/api/contas');
+            const contas = response ? await response.json() : [];
+            
+            const container = document.getElementById('saldosContas');
+            let saldoTotal = 0;
+            
+            if (contas.length > 0) {
+                container.innerHTML = '';
+                contas.forEach(conta => {
+                    const saldo = parseFloat(conta.saldo_atual || 0);
+                    saldoTotal += saldo;
+                    
+                    const saldoDiv = document.createElement('div');
+                    saldoDiv.className = 'd-flex justify-content-between align-items-center mb-2';
+                    saldoDiv.innerHTML = `
+                        <span>${conta.nome_conta}</span>
+                        <span class="fw-bold ${saldo >= 0 ? 'text-success' : 'text-danger'}">${formatCurrency(saldo)}</span>
+                    `;
+                    container.appendChild(saldoDiv);
+                });
+            } else {
+                container.innerHTML = '<p class="text-muted">Nenhuma conta cadastrada</p>';
+            }
+            
+            document.getElementById('saldoTotal').textContent = formatCurrency(saldoTotal);
+            document.getElementById('saldoTotal').className = `fw-bold ${saldoTotal >= 0 ? 'text-success' : 'text-danger'}`;
+            
+        } catch (error) {
+            console.error('Erro ao carregar saldos:', error);
+            document.getElementById('saldosContas').innerHTML = '<p class="text-muted">Erro ao carregar saldos</p>';
+            document.getElementById('saldoTotal').textContent = 'R$ 0,00';
+        }
+    }
+
+    async function carregarReceitasPorCategoria(ano, mes) {
+        try {
+            const response = await fetchWithAuth('/api/contas-receber');
+            const contas = response ? await response.json() : [];
+            
+            // Filtrar por mês/ano e status recebido
+            const contasMes = contas.filter(conta => {
+                // Para receitas, usar data_vencimento (quando a receita foi planejada)
+                const data = new Date(conta.data_vencimento + 'T00:00:00');
+                return conta.status === 'Recebido' && 
+                       data.getFullYear() === ano && 
+                       data.getMonth() + 1 === mes;
+            });
+            
+            // Agrupar por categoria
+            const receitasPorCategoria = {};
+            contasMes.forEach(conta => {
+                const categoria = conta.categoria || 'Sem categoria';
+                if (!receitasPorCategoria[categoria]) {
+                    receitasPorCategoria[categoria] = 0;
+                }
+                receitasPorCategoria[categoria] += parseFloat(conta.valor);
+            });
+            
+            const container = document.getElementById('receitasPorCategoria');
+            
+            if (Object.keys(receitasPorCategoria).length > 0) {
+                container.innerHTML = '';
+                
+                // Ordenar por valor (maior primeiro)
+                const categoriasOrdenadas = Object.entries(receitasPorCategoria)
+                    .sort(([,a], [,b]) => b - a);
+                
+                categoriasOrdenadas.forEach(([categoria, valor]) => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                    item.innerHTML = `
+                        <span>${categoria}</span>
+                        <span class="fw-bold text-success">${formatCurrency(valor)}</span>
+                    `;
+                    container.appendChild(item);
+                });
+                
+                // Total
+                const total = Object.values(receitasPorCategoria).reduce((sum, valor) => sum + valor, 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'd-flex justify-content-between align-items-center mt-3 pt-2 border-top';
+                totalDiv.innerHTML = `
+                    <strong>Total:</strong>
+                    <strong class="text-success">${formatCurrency(total)}</strong>
+                `;
+                container.appendChild(totalDiv);
+            } else {
+                container.innerHTML = '<p class="text-muted">Nenhuma receita no período</p>';
+            }
+            
+        } catch (error) {
+            console.error('Erro ao carregar receitas por categoria:', error);
+            document.getElementById('receitasPorCategoria').innerHTML = '<p class="text-muted">Erro ao carregar dados</p>';
+        }
+    }
+
+    async function carregarDespesasPorCategoria(ano, mes) {
+        try {
+            const response = await fetchWithAuth('/api/contas-pagar');
+            const contas = response ? await response.json() : [];
+            
+            // Filtrar por mês/ano e status pago
+            const contasMes = contas.filter(conta => {
+                // Para despesas por categoria, usar data_vencimento (quando a despesa foi planejada)
+                const data = new Date(conta.data_vencimento + 'T00:00:00');
+                return conta.status === 'Pago' && 
+                       data.getFullYear() === ano && 
+                       data.getMonth() + 1 === mes;
+            });
+            
+            // Agrupar por categoria
+            const despesasPorCategoria = {};
+            contasMes.forEach(conta => {
+                const categoria = conta.categoria || 'Sem categoria';
+                if (!despesasPorCategoria[categoria]) {
+                    despesasPorCategoria[categoria] = 0;
+                }
+                despesasPorCategoria[categoria] += parseFloat(conta.valor);
+            });
+            
+            const container = document.getElementById('despesasPorCategoria');
+            
+            if (Object.keys(despesasPorCategoria).length > 0) {
+                container.innerHTML = '';
+                
+                // Ordenar por valor (maior primeiro)
+                const categoriasOrdenadas = Object.entries(despesasPorCategoria)
+                    .sort(([,a], [,b]) => b - a);
+                
+                categoriasOrdenadas.forEach(([categoria, valor]) => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                    item.innerHTML = `
+                        <span>${categoria}</span>
+                        <span class="fw-bold text-danger">${formatCurrency(valor)}</span>
+                    `;
+                    container.appendChild(item);
+                });
+                
+                // Total
+                const total = Object.values(despesasPorCategoria).reduce((sum, valor) => sum + valor, 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'd-flex justify-content-between align-items-center mt-3 pt-2 border-top';
+                totalDiv.innerHTML = `
+                    <strong>Total:</strong>
+                    <strong class="text-danger">${formatCurrency(total)}</strong>
+                `;
+                container.appendChild(totalDiv);
+            } else {
+                container.innerHTML = '<p class="text-muted">Nenhuma despesa no período</p>';
+            }
+            
+        } catch (error) {
+            console.error('Erro ao carregar despesas por categoria:', error);
+            document.getElementById('despesasPorCategoria').innerHTML = '<p class="text-muted">Erro ao carregar dados</p>';
+        }
+    }
+
+    async function carregarGastosPorBeneficiario(ano, mes) {
+        try {
+            const response = await fetchWithAuth('/api/contas-pagar');
+            const contas = response ? await response.json() : [];
+            
+            // Filtrar por mês/ano e status pago
+            const contasMes = contas.filter(conta => {
+                // Para gastos por beneficiário, usar data_vencimento (quando o gasto foi planejado)
+                const data = new Date(conta.data_vencimento + 'T00:00:00');
+                return conta.status === 'Pago' && 
+                       data.getFullYear() === ano && 
+                       data.getMonth() + 1 === mes;
+            });
+            
+            // Buscar dados dos beneficiários
+            const responseBeneficiarios = await fetchWithAuth('/api/beneficiarios');
+            const beneficiarios = responseBeneficiarios ? await responseBeneficiarios.json() : [];
+            
+            // Agrupar por beneficiário
+            const gastosPorBeneficiario = {};
+            contasMes.forEach(conta => {
+                if (conta.beneficiario_id) {
+                    const beneficiario = beneficiarios.find(b => b.id === conta.beneficiario_id);
+                    const nome = beneficiario ? beneficiario.nome : `Beneficiário ID ${conta.beneficiario_id}`;
+                    
+                    if (!gastosPorBeneficiario[nome]) {
+                        gastosPorBeneficiario[nome] = 0;
+                    }
+                    gastosPorBeneficiario[nome] += parseFloat(conta.valor);
+                }
+            });
+            
+            const container = document.getElementById('gastosPorBeneficiario');
+            
+            if (Object.keys(gastosPorBeneficiario).length > 0) {
+                container.innerHTML = '';
+                
+                // Ordenar por valor (maior primeiro)
+                const beneficiariosOrdenados = Object.entries(gastosPorBeneficiario)
+                    .sort(([,a], [,b]) => b - a);
+                
+                beneficiariosOrdenados.forEach(([nome, valor]) => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded';
+                    item.innerHTML = `
+                        <span>${nome}</span>
+                        <span class="fw-bold text-warning">${formatCurrency(valor)}</span>
+                    `;
+                    container.appendChild(item);
+                });
+                
+                // Total
+                const total = Object.values(gastosPorBeneficiario).reduce((sum, valor) => sum + valor, 0);
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'd-flex justify-content-between align-items-center mt-3 pt-2 border-top';
+                totalDiv.innerHTML = `
+                    <strong>Total com Beneficiários:</strong>
+                    <strong class="text-warning">${formatCurrency(total)}</strong>
+                `;
+                container.appendChild(totalDiv);
+            } else {
+                container.innerHTML = '<p class="text-muted">Nenhum gasto com beneficiários no período</p>';
+            }
+            
+        } catch (error) {
+            console.error('Erro ao carregar gastos por beneficiário:', error);
+            document.getElementById('gastosPorBeneficiario').innerHTML = '<p class="text-muted">Erro ao carregar dados</p>';
+        }
+    }
+</script>
+{% endblock %}
+
