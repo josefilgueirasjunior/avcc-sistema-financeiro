@@ -83,16 +83,22 @@
     @media (max-width: 768px) {
         .table-fixed {
             font-size: 0.8rem;
+            table-layout: auto;
         }
         
         .table-fixed th {
             font-size: 0.75rem;
             padding: 0.4rem 0.2rem;
+            white-space: normal;
+            word-wrap: break-word;
+            min-width: 80px;
         }
         
         .table-fixed td {
             font-size: 0.8rem;
             padding: 0.5rem 0.3rem;
+            white-space: normal;
+            word-wrap: break-word;
         }
         
         /* Ocultar colunas menos importantes em mobile */
@@ -113,17 +119,69 @@
         .btn-group-actions .btn i {
             font-size: 0.8rem;
         }
+        
+        /* Ajustar larguras específicas para mobile */
+        .table-fixed th:nth-child(1) { /* Status */
+            width: 80px !important;
+            min-width: 80px;
+        }
+        
+        .table-fixed th:nth-child(2) { /* Fornecedor */
+            width: auto !important;
+            min-width: 120px;
+        }
+        
+        .table-fixed th:nth-child(3) { /* Ven/Valor */
+            width: 100px !important;
+            min-width: 100px;
+        }
+        
+        .table-fixed th:nth-child(6) { /* Ações */
+            width: 80px !important;
+            min-width: 80px;
+        }
     }
     
     @media (max-width: 576px) {
         .table-fixed th {
             font-size: 0.7rem;
             padding: 0.35rem 0.15rem;
+            white-space: normal;
+            line-height: 1.2;
         }
         
         .table-fixed td {
             font-size: 0.75rem;
             padding: 0.4rem 0.2rem;
+        }
+        
+        /* Ajustar ainda mais para telas muito pequenas */
+        .table-fixed th:nth-child(1) { /* Status */
+            width: 70px !important;
+            min-width: 70px;
+        }
+        
+        .table-fixed th:nth-child(3) { /* Ven/Valor */
+            width: 90px !important;
+            min-width: 90px;
+        }
+        
+        .table-fixed th:nth-child(6) { /* Ações */
+            width: 70px !important;
+            min-width: 70px;
+        }
+        
+        /* Forçar botões lado a lado em telas pequenas */
+        .btn-group-actions {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 1px !important;
+        }
+        
+        .btn-group-actions .btn {
+            padding: 0.2rem 0.25rem !important;
+            font-size: 0.65rem !important;
+            min-width: 24px !important;
         }
     }
 </style>
@@ -234,7 +292,7 @@
                     <tr>
                         <th onclick="sortTable('status')" style="width: 110px;">Status <i class="fas fa-sort"></i></th>
                         <th onclick="sortTable('fornecedor')" style="width: auto;">Fornecedor <i class="fas fa-sort"></i></th>
-                        <th onclick="sortTable('data_vencimento')" style="width: 140px;">Venc/Valor <i class="fas fa-sort"></i></th>
+                        <th onclick="sortTable('data_vencimento')" style="width: 140px;">Ven/Valor <i class="fas fa-sort"></i></th>
                         <th onclick="sortTable('beneficiario')" style="width: auto;" class="hide-mobile">Beneficiário <i class="fas fa-sort"></i></th>
                         <th onclick="sortTable('conta')" style="width: auto;" class="hide-mobile">Conta/Categ <i class="fas fa-sort"></i></th>
                         <th style="width: 140px;">Ações</th>

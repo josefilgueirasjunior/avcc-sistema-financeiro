@@ -103,7 +103,7 @@
         /* Ajustar larguras das colunas em mobile */
         .table-fixed th:nth-child(1) { width: 60px !important; } /* Status */
         .table-fixed th:nth-child(2) { width: 140px !important; } /* Nome/Razão */
-        .table-fixed th:nth-child(3) { width: 120px !important; } /* Venc/Valor */
+        .table-fixed th:nth-child(3) { width: 120px !important; } /* Ven/Valor */
         .table-fixed th:nth-child(4) { width: 100px !important; } /* Ações */
         
         .btn-group-actions {
@@ -137,7 +137,7 @@
         /* Ajustar larguras para telas muito pequenas */
         .table-fixed th:nth-child(1) { width: 50px !important; } /* Status */
         .table-fixed th:nth-child(2) { width: 120px !important; } /* Nome/Razão */
-        .table-fixed th:nth-child(3) { width: 110px !important; } /* Venc/Valor */
+        .table-fixed th:nth-child(3) { width: 110px !important; } /* Ven/Valor */
         .table-fixed th:nth-child(4) { width: 90px !important; } /* Ações */
     }
 </style>
@@ -145,12 +145,10 @@
 
 {% block content %}
 <div class="page-header">
-    <div class="d-flex justify-content-between align-items-center">
-        <div>
-            <h1 class="page-title">Contas a Receber</h1>
-            <p class="page-subtitle">Gerencie as receitas e contas a receber da associação</p>
-        </div>
-        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 flex-shrink-0" onclick="abrirModal()">
+    <div>
+        <h1 class="page-title">Contas a Receber</h1>
+        <p class="page-subtitle">Gerencie as receitas e contas a receber da associação</p>
+        <button class="btn btn-primary btn-sm rounded-1 px-3 py-2 mt-2" onclick="abrirModal()">
             <i class="fas fa-plus me-1"></i>
             <span class="d-none d-md-inline">Adicionar Nova</span>
             <span class="d-md-none">Adicionar</span>
@@ -251,7 +249,7 @@
                         <th class="hide-mobile" style="width: 150px;">Origem/Emissão</th>
                         <th style="width: 200px;">Nome/Razão</th>
                         <th class="hide-mobile" style="width: 180px;">Conta/Categ</th>
-                        <th style="width: 140px;">Venc/Valor</th>
+                        <th style="width: 140px;">Ven/Valor</th>
                         <th style="width: 120px;">Ações</th>
                     </tr>
                 </thead>

@@ -135,11 +135,34 @@
         }
         
         /* Ajustar larguras para telas muito pequenas */
-        .table-fixed th:nth-child(1) { width: 70px !important; } /* Status/Data */
-        .table-fixed th:nth-child(2) { width: 130px !important; } /* Nome */
-        .table-fixed th:nth-child(3) { width: 90px !important; } /* Valor/Conta */
-        .table-fixed th:nth-child(4) { width: 130px !important; } /* Ações */
-    }
+        .table-fixed th:nth-child(1) { width: 60px !important; } /* Status/Data */
+        .table-fixed th:nth-child(2) { width: 120px !important; } /* Nome */
+        .table-fixed th:nth-child(3) { width: 80px !important; } /* Valor/Conta */
+        .table-fixed th:nth-child(4) { width: 150px !important; } /* Ações */
+        
+        /* Forçar botões lado a lado em telas pequenas */
+        .btn-group-actions {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            gap: 1px !important;
+        }
+        
+        .btn-group-actions .btn {
+             padding: 0.2rem 0.25rem !important;
+             font-size: 0.65rem !important;
+             min-width: 24px !important;
+         }
+         
+         /* Forçar scroll horizontal em telas pequenas */
+         .table-responsive {
+             overflow-x: auto !important;
+             -webkit-overflow-scrolling: touch;
+         }
+         
+         .table-fixed {
+             min-width: 600px !important;
+         }
+     }
 </style>
 
 <div class="page-header">

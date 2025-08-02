@@ -1,13 +1,31 @@
 from datetime import datetime
 
 # Informações de versão do sistema
-VERSION = "1.5.0"
+VERSION = "1.5.1"
 RELEASE_DATE = "2025-01-28"
-BUILD_NUMBER = "20250128004"
+BUILD_NUMBER = "20250128005"
 ENVIRONMENT = "development"  # development, staging, production
 
 # Changelog das versões
 CHANGELOG = {
+    "1.5.1": {
+        "date": "2025-01-28",
+        "features": [
+            "Melhorias de responsividade em todas as tabelas do sistema",
+            "Correção de sobreposição de cabeçalhos em dispositivos móveis",
+            "Botões de ação organizados lado a lado em modo responsivo",
+            "Cabeçalhos de tabela otimizados: 'Responsável' e 'Ven/Valor'",
+            "Layout de botões reorganizado em contas a receber",
+            "Scroll horizontal implementado em doações avulsas para telas pequenas",
+            "Larguras de colunas ajustadas para melhor distribuição do espaço",
+            "Consistência visual entre beneficiários, contas a pagar e doações avulsas"
+        ],
+        "fixes": [
+            "Corrigido corte de botões em dispositivos móveis",
+            "Resolvido problema de cabeçalhos sobrepostos em tablets",
+            "Ajustada largura da coluna de ações para evitar truncamento"
+        ]
+    },
     "1.5.0": {
         "date": "2025-01-28",
         "features": [
